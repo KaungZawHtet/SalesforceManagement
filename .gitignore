@@ -1,0 +1,141 @@
+# =====================================
+# Environment Variables / Secrets
+# =====================================
+
+.env
+.env.*
+!.env.example
+
+# Salesforce credentials
+*.key
+*.pem
+
+
+# =====================================
+# Node.js
+# =====================================
+
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Package manager caches
+.npm/
+.yarn/
+.pnpm-store/
+
+
+# =====================================
+# Next.js
+# =====================================
+
+.next/
+out/
+
+# Next.js build output
+dist/
+
+
+# =====================================
+# NestJS / Backend
+# =====================================
+
+backend/dist/
+backend/coverage/
+
+
+# =====================================
+# Testing
+# =====================================
+
+coverage/
+.nyc_output/
+
+
+# =====================================
+# TypeScript
+# =====================================
+
+*.tsbuildinfo
+
+
+# =====================================
+# Logs
+# =====================================
+
+logs/
+*.log
+
+
+# =====================================
+# Docker
+# =====================================
+
+docker-compose.override.yml
+
+
+# =====================================
+# IDE / Editor
+# =====================================
+
+.vscode/
+.idea/
+
+# VS Code settings (optional)
+*.code-workspace
+
+
+# =====================================
+# OS Files
+# =====================================
+
+.DS_Store
+Thumbs.db
+
+
+# =====================================
+# Temporary Files
+# =====================================
+
+*.tmp
+*.temp
+.cache/
+.temp/
+
+
+# =====================================
+# AI Coding Tools
+# =====================================
+
+# Keep project instructions and skills tracked
+# Ignore only local AI cache/state
+
+.opencode/
+.claude/
+.cursor/
+
+
+# =====================================
+# Local Database / Storage
+# =====================================
+
+*.sqlite
+*.db
+
+
+# =====================================
+# Frontend Environment
+# =====================================
+
+frontend/.env
+frontend/.env.local
+
+
+# =====================================
+# Backend Environment
+# =====================================
+
+backend/.env
+backend/.env.local
