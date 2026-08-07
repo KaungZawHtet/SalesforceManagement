@@ -9,6 +9,8 @@ import ***REMOVED*** translateSalesforceError ***REMOVED*** from './salesforce.e
 import ***REMOVED*** CachedToken ***REMOVED*** from './token-cache';
 import ***REMOVED*** OauthService ***REMOVED*** from './oauth.service';
 
+const SF_TIMEOUT_MS = 10_000;
+
 @Injectable()
 export class SalesforceClient ***REMOVED***
   private readonly logger = new Logger(SalesforceClient.name);
@@ -20,7 +22,19 @@ export class SalesforceClient ***REMOVED***
 
   async request<T = unknown>(path: string, init: RequestInit = ***REMOVED******REMOVED***): Promise<T> ***REMOVED***
     const token = await this.oauthService.authenticate();
-    let response = await this.fetchWithAuth(path, init, token);
+    let response: Response;
+
+    try ***REMOVED***
+      response = await this.fetchWithAuth(path, init, token);
+***REMOVED*** catch (err) ***REMOVED***
+      if (err instanceof Error && err.name === 'AbortError') ***REMOVED***
+        this.logger.warn(
+          `Salesforce request timed out after $***REMOVED***SF_TIMEOUT_MS***REMOVED***ms`,
+        );
+        throw translateSalesforceError(504, ***REMOVED******REMOVED***);
+  ***REMOVED***
+      throw err;
+***REMOVED***
 
     if (response.status === 401) ***REMOVED***
       this.logger.warn(
@@ -52,12 +66,20 @@ export class SalesforceClient ***REMOVED***
     if (init.headers) ***REMOVED***
       Object.assign(headers, init.headers as Record<string, string>);
 ***REMOVED***
-    return fetch(url, ***REMOVED***
-      method: init.method ?? 'GET',
-      headers,
-      body: init.body,
-      signal: init.signal,
-***REMOVED***);
+
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), SF_TIMEOUT_MS);
+
+    try ***REMOVED***
+      return await fetch(url, ***REMOVED***
+        method: init.method ?? 'GET',
+        headers,
+        body: init.body,
+        signal: controller.signal,
+  ***REMOVED***);
+***REMOVED*** finally ***REMOVED***
+      clearTimeout(timeoutId);
+***REMOVED***
   ***REMOVED***
 
   private async handleResponse<T>(response: Response): Promise<T> ***REMOVED***

@@ -50,32 +50,43 @@ No database, JWT, Redis, or user-management libraries are used — keeping the d
 ```
 .
 ├── AGENTS.md                 # Project objective, scope & conventions
+├── README.md                 # This file
 ├── .env.example              # Root env reference (Docker Compose)
-├── docker-compose.yml        # Backend service
+├── docker-compose.yml        # Backend + Frontend services
 ├── backend/
-│   ├── Dockerfile            # Multi-stage build
+│   ├── Dockerfile
 │   ├── .env.example          # Backend env reference (local dev)
-│   ├── src/
-│   │   ├── main.ts           # Global ValidationPipe, CORS, exception filter
-│   │   ├── app.module.ts     # Config + feature modules
-│   │   ├── config/configuration.ts   # Typed env + startup validation
-│   │   ├── common/
-│   │   │   ├── filters/http-exception.filter.ts
-│   │   │   └── health/health.controller.ts
-│   │   ├── auth/auth.module.ts        # Stub – auth is out of scope
-│   │   ├── salesforce/                 # All Salesforce integration lives here
-│   │   │   ├── oauth.service.ts        # OAuth 2.0 Password Grant
-│   │   │   ├── token-cache.ts          # In-memory token cache (60s margin)
-│   │   │   ├── salesforce.client.ts    # Authorized fetch + 401 retry
-│   │   │   ├── salesforce.service.ts   # Query/create + response mapping
-│   │   │   ├── salesforce.errors.ts    # Salesforce → app error translation
-│   │   └── accounts/
-│   │       ├── accounts.controller.ts  # Thin: GET/POST /api/accounts
-│   │       ├── accounts.service.ts     # Delegates to SalesforceService
-│   │       ├── dto/create-account.dto.ts
-│   │       └── types/account.ts
-│   └── test files
-└── frontend/                 # Built separately (out of scope here)
+│   └── src/
+│       ├── main.ts
+│       ├── app.module.ts
+│       ├── config/configuration.ts
+│       ├── common/
+│       │   ├── filters/http-exception.filter.ts
+│       │   └── health/health.controller.ts
+│       ├── auth/auth.module.ts        # Stub – auth is out of scope
+│       ├── salesforce/                 # All Salesforce integration lives here
+│       └── accounts/
+│           ├── accounts.controller.ts
+│           ├── accounts.service.ts
+│           ├── dto/create-account.dto.ts
+│           └── types/account.ts
+│   └── test/
+├── frontend/
+│   ├── Dockerfile
+│   ├── .env.example
+│   ├── components.json
+│   └── src/
+│       ├── app/
+│       │   ├── layout.tsx
+│       │   ├── page.tsx
+│       │   └── globals.css
+│       ├── components/
+│       │   ├── ui/ (button, input, label, table, sonner)
+│       │   └── accounts/ (accounts-view, accounts-table, account-row, create-account-form)
+│       ├── hooks/ (use-accounts)
+│       ├── lib/ (api/client.ts, api/accounts.ts, utils.ts)
+│       └── types/ (account.ts)
+└── docs/                     # OpenAPI spec, deployment notes (if needed)
 ```
 
 ---
@@ -90,22 +101,35 @@ No database, JWT, Redis, or user-management libraries are used — keeping the d
 
 ## Environment Variables
 
-Copy `backend/.env.example` to `backend/.env` for local development, and the root
-`.env.example` to `.env` for Docker Compose. **Never commit real credentials.**
+### Backend (`backend/.env` or Docker secret)
 
-| Variable            | Description                                    |
-| ------------------- | ---------------------------------------------- |
-| `SF_LOGIN_URL`      | Salesforce login host (e.g. `https://login.salesforce.com`) |
-| `SF_CLIENT_ID`      | Connected App Client Id                        |
-| `SF_CLIENT_SECRET`  | Connected App Client Secret                    |
-| `SF_USERNAME`       | Salesforce user username                       |
-| `SF_PASSWORD`       | Salesforce user password                     |
-| `SF_SECURITY_TOKEN` | Salesforce security token (appended to password) |
-| `SF_API_VERSION`    | Salesforce REST API version (e.g. `60.0`)      |
-| `CORS_ORIGIN`       | Allowed frontend origin                        |
-| `PORT`              | Backend listen port (e.g. `3000`)              |
+Copy `backend/.env.example` to `backend/.env` for local development:
 
-A missing required variable prevents the application from starting with a clear error message.
+| Variable             | Description                                       |
+| -------------------- | ------------------------------------------------- |
+| `SF_LOGIN_URL`       | Salesforce login host (e.g. `https://login.salesforce.com`, `https://test.salesforce.com` for sandboxes) |
+| `SF_CLIENT_ID`       | Connected App Client Id (from Salesforce Setup → App Manager) |
+| `SF_CLIENT_SECRET`   | Connected App Client Secret                       |
+| `SF_USERNAME`        | Salesforce user email/username                    |
+| `SF_PASSWORD`        | Salesforce user password                          |
+| `SF_SECURITY_TOKEN`  | Salesforce security token (from account settings or email) |
+| `SF_API_VERSION`     | Salesforce REST API version (e.g. `60.0` – check [developer docs](https://developer.salesforce.com/docs/atlas.en-us.api_rest.meta/api_rest/intro_versions.htm)) |
+| `CORS_ORIGIN`        | Allowed frontend origin (e.g. `http://localhost:3001`) |
+| `PORT`               | Backend listen port (default `3000`)              |
+
+Copy root `.env.example` to `.env` for Docker Compose (contains same vars).
+
+> **Important**: A missing required variable prevents the application from starting with a clear error message. The Password Grant requires all Salesforce credentials; ensure the Connected App has these OAuth scopes enabled: `api`, `refresh_token`, `full`.
+
+### Frontend (`frontend/.env.local`)
+
+Copy `frontend/.env.example` to `frontend/.env.local` for local development:
+
+| Variable               | Description                                            |
+| -------------------- | ------------------------------------------------------ |
+| `NEXT_PUBLIC_API_URL`  | Backend API base URL (e.g. `http://localhost:3000`)    |
+
+> `NEXT_PUBLIC_*` variables are inlined at build time — they become static in the client bundle. Do not include secrets here.
 
 ---
 
@@ -128,13 +152,21 @@ responses.
 ### With Docker Compose (recommended)
 
 ```bash
-cp .env.example .env     # edit with real Salesforce credentials
+cp .env.example .env     # edit with REAL Salesforce credentials (never commit)
 docker compose up --build
 ```
 
-The backend is reachable at `http://localhost:3000`.
+The full stack:
+- Backend: `http://localhost:3000`
+- Frontend: `http://localhost:3001`
 
-### Locally
+```bash
+# Verify backend health
+curl http://localhost:3000/api/health
+# ***REMOVED***"status":"ok"***REMOVED***
+```
+
+### Locally (backend only)
 
 ```bash
 cd backend
@@ -143,11 +175,14 @@ npm install
 npm run start:dev
 ```
 
-### Health
+### Locally (frontend only)
 
 ```bash
-curl http://localhost:3000/api/health
-# ***REMOVED***"status":"ok"***REMOVED***
+cd frontend
+cp .env.example .env.local  # edit NEXT_PUBLIC_API_URL
+npm install
+npm run dev                 # http://localhost:3001
+```
 ```
 
 ---

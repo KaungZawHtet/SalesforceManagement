@@ -32,6 +32,13 @@ export function buildHttpException(
   const errorCode = errors[0]?.errorCode;
   const firstMessage = errors[0]?.message;
 
+  if (status === 504) ***REMOVED***
+    return ***REMOVED***
+      statusCode: 504,
+      message: 'Salesforce request timed out. Please try again.',
+***REMOVED***;
+  ***REMOVED***
+
   switch (errorCode) ***REMOVED***
     case 'INVALID_SESSION_ID':
     case 'INVALID_LOGIN':
@@ -104,6 +111,9 @@ export function translateSalesforceError(
   body: unknown,
 ): HttpException ***REMOVED***
   const ***REMOVED*** statusCode, message ***REMOVED*** = buildHttpException(status, body);
+  if (statusCode === 504) ***REMOVED***
+    return new HttpException(message, 504);
+  ***REMOVED***
   switch (statusCode) ***REMOVED***
     case 400:
       return new BadRequestException(message);
