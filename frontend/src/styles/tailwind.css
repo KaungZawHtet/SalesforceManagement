@@ -1,0 +1,318 @@
+/*! tailwindcss v4.1.12 | MIT License | https://tailwindcss.com */
+@layer properties;
+.visible ***REMOVED***
+  visibility: visible;
+***REMOVED***
+.relative ***REMOVED***
+  position: relative;
+***REMOVED***
+.block ***REMOVED***
+  display: block;
+***REMOVED***
+.flex ***REMOVED***
+  display: flex;
+***REMOVED***
+.grid ***REMOVED***
+  display: grid;
+***REMOVED***
+.inline-flex ***REMOVED***
+  display: inline-flex;
+***REMOVED***
+.h-full ***REMOVED***
+  height: 100%;
+***REMOVED***
+.min-h-full ***REMOVED***
+  min-height: 100%;
+***REMOVED***
+.w-full ***REMOVED***
+  width: 100%;
+***REMOVED***
+.caption-bottom ***REMOVED***
+  caption-side: bottom;
+***REMOVED***
+.flex-col ***REMOVED***
+  flex-direction: column;
+***REMOVED***
+.items-center ***REMOVED***
+  align-items: center;
+***REMOVED***
+.justify-center ***REMOVED***
+  justify-content: center;
+***REMOVED***
+.overflow-auto ***REMOVED***
+  overflow: auto;
+***REMOVED***
+.border ***REMOVED***
+  border-style: var(--tw-border-style);
+  border-width: 1px;
+***REMOVED***
+.border-b ***REMOVED***
+  border-bottom-style: var(--tw-border-style);
+  border-bottom-width: 1px;
+***REMOVED***
+.text-center ***REMOVED***
+  text-align: center;
+***REMOVED***
+.text-left ***REMOVED***
+  text-align: left;
+***REMOVED***
+.align-middle ***REMOVED***
+  vertical-align: middle;
+***REMOVED***
+.leading-none ***REMOVED***
+  --tw-leading: 1;
+  line-height: 1;
+***REMOVED***
+.whitespace-nowrap ***REMOVED***
+  white-space: nowrap;
+***REMOVED***
+.underline-offset-4 ***REMOVED***
+  text-underline-offset: 4px;
+***REMOVED***
+.antialiased ***REMOVED***
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+***REMOVED***
+.outline ***REMOVED***
+  outline-style: var(--tw-outline-style);
+  outline-width: 1px;
+***REMOVED***
+.transition-colors ***REMOVED***
+  transition-property: color, background-color, border-color, outline-color, text-decoration-color, fill, stroke, --tw-gradient-from, --tw-gradient-via, --tw-gradient-to;
+  transition-timing-function: var(--tw-ease, ease);
+  transition-duration: var(--tw-duration, 0s);
+***REMOVED***
+.peer-disabled\:cursor-not-allowed ***REMOVED***
+  &:is(:where(.peer):disabled ~ *) ***REMOVED***
+    cursor: not-allowed;
+  ***REMOVED***
+***REMOVED***
+.peer-disabled\:opacity-75 ***REMOVED***
+  &:is(:where(.peer):disabled ~ *) ***REMOVED***
+    opacity: 75%;
+  ***REMOVED***
+***REMOVED***
+.file\:border-0 ***REMOVED***
+  &::file-selector-button ***REMOVED***
+    border-style: var(--tw-border-style);
+    border-width: 0px;
+  ***REMOVED***
+***REMOVED***
+.file\:bg-transparent ***REMOVED***
+  &::file-selector-button ***REMOVED***
+    background-color: transparent;
+  ***REMOVED***
+***REMOVED***
+.hover\:underline ***REMOVED***
+  &:hover ***REMOVED***
+    @media (hover: hover) ***REMOVED***
+      text-decoration-line: underline;
+***REMOVED***
+  ***REMOVED***
+***REMOVED***
+.focus-visible\:ring-2 ***REMOVED***
+  &:focus-visible ***REMOVED***
+    --tw-ring-shadow: var(--tw-ring-inset,) 0 0 0 calc(2px + var(--tw-ring-offset-width)) var(--tw-ring-color, currentcolor);
+    box-shadow: var(--tw-inset-shadow), var(--tw-inset-ring-shadow), var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow);
+  ***REMOVED***
+***REMOVED***
+.focus-visible\:ring-offset-2 ***REMOVED***
+  &:focus-visible ***REMOVED***
+    --tw-ring-offset-width: 2px;
+    --tw-ring-offset-shadow: var(--tw-ring-inset,) 0 0 0 var(--tw-ring-offset-width) var(--tw-ring-offset-color);
+  ***REMOVED***
+***REMOVED***
+.focus-visible\:outline-none ***REMOVED***
+  &:focus-visible ***REMOVED***
+    --tw-outline-style: none;
+    outline-style: none;
+  ***REMOVED***
+***REMOVED***
+.disabled\:pointer-events-none ***REMOVED***
+  &:disabled ***REMOVED***
+    pointer-events: none;
+  ***REMOVED***
+***REMOVED***
+.disabled\:cursor-not-allowed ***REMOVED***
+  &:disabled ***REMOVED***
+    cursor: not-allowed;
+  ***REMOVED***
+***REMOVED***
+.disabled\:opacity-50 ***REMOVED***
+  &:disabled ***REMOVED***
+    opacity: 50%;
+  ***REMOVED***
+***REMOVED***
+.\[\&_svg\]\:pointer-events-none ***REMOVED***
+  & svg ***REMOVED***
+    pointer-events: none;
+  ***REMOVED***
+***REMOVED***
+.\[\&_svg\]\:flex-none ***REMOVED***
+  & svg ***REMOVED***
+    flex: none;
+  ***REMOVED***
+***REMOVED***
+.\[\&_svg\]\:shrink-0 ***REMOVED***
+  & svg ***REMOVED***
+    flex-shrink: 0;
+  ***REMOVED***
+***REMOVED***
+.\[\&_tr\]\:border-b ***REMOVED***
+  & tr ***REMOVED***
+    border-bottom-style: var(--tw-border-style);
+    border-bottom-width: 1px;
+  ***REMOVED***
+***REMOVED***
+:root, :host ***REMOVED***
+  --background: 210 100% 98%;
+  --foreground: 210 10% 20%;
+  --input: 210 20% 90%;
+  --font-sans: var(--font-geist-sans);
+***REMOVED***
+@layer base ***REMOVED***
+  :root ***REMOVED***
+    font-family: var(--font-geist-sans);
+  ***REMOVED***
+  body ***REMOVED***
+    background: hsl(var(--background));
+    color: hsl(var(--foreground));
+    font-family: var(--font-sans);
+  ***REMOVED***
+***REMOVED***
+@property --tw-border-style ***REMOVED***
+  syntax: "*";
+  inherits: false;
+  initial-value: solid;
+***REMOVED***
+@property --tw-leading ***REMOVED***
+  syntax: "*";
+  inherits: false;
+***REMOVED***
+@property --tw-outline-style ***REMOVED***
+  syntax: "*";
+  inherits: false;
+  initial-value: solid;
+***REMOVED***
+@property --tw-shadow ***REMOVED***
+  syntax: "*";
+  inherits: false;
+  initial-value: 0 0 #0000;
+***REMOVED***
+@property --tw-shadow-color ***REMOVED***
+  syntax: "*";
+  inherits: false;
+***REMOVED***
+@property --tw-shadow-alpha ***REMOVED***
+  syntax: "<percentage>";
+  inherits: false;
+  initial-value: 100%;
+***REMOVED***
+@property --tw-inset-shadow ***REMOVED***
+  syntax: "*";
+  inherits: false;
+  initial-value: 0 0 #0000;
+***REMOVED***
+@property --tw-inset-shadow-color ***REMOVED***
+  syntax: "*";
+  inherits: false;
+***REMOVED***
+@property --tw-inset-shadow-alpha ***REMOVED***
+  syntax: "<percentage>";
+  inherits: false;
+  initial-value: 100%;
+***REMOVED***
+@property --tw-ring-color ***REMOVED***
+  syntax: "*";
+  inherits: false;
+***REMOVED***
+@property --tw-ring-shadow ***REMOVED***
+  syntax: "*";
+  inherits: false;
+  initial-value: 0 0 #0000;
+***REMOVED***
+@property --tw-inset-ring-color ***REMOVED***
+  syntax: "*";
+  inherits: false;
+***REMOVED***
+@property --tw-inset-ring-shadow ***REMOVED***
+  syntax: "*";
+  inherits: false;
+  initial-value: 0 0 #0000;
+***REMOVED***
+@property --tw-ring-inset ***REMOVED***
+  syntax: "*";
+  inherits: false;
+***REMOVED***
+@property --tw-ring-offset-width ***REMOVED***
+  syntax: "<length>";
+  inherits: false;
+  initial-value: 0px;
+***REMOVED***
+@property --tw-ring-offset-color ***REMOVED***
+  syntax: "*";
+  inherits: false;
+  initial-value: #fff;
+***REMOVED***
+@property --tw-ring-offset-shadow ***REMOVED***
+  syntax: "*";
+  inherits: false;
+  initial-value: 0 0 #0000;
+***REMOVED***
+@layer properties ***REMOVED***
+  @supports ((-webkit-hyphens: none) and (not (margin-trim: inline))) or ((-moz-orient: inline) and (not (color:rgb(from red r g b)))) ***REMOVED***
+    *, ::before, ::after, ::backdrop ***REMOVED***
+      --tw-border-style: solid;
+      --tw-leading: initial;
+      --tw-outline-style: solid;
+      --tw-shadow: 0 0 #0000;
+      --tw-shadow-color: initial;
+      --tw-shadow-alpha: 100%;
+      --tw-inset-shadow: 0 0 #0000;
+      --tw-inset-shadow-color: initial;
+      --tw-inset-shadow-alpha: 100%;
+      --tw-ring-color: initial;
+      --tw-ring-shadow: 0 0 #0000;
+      --tw-inset-ring-color: initial;
+      --tw-inset-ring-shadow: 0 0 #0000;
+      --tw-ring-inset: initial;
+      --tw-ring-offset-width: 0px;
+      --tw-ring-offset-color: #fff;
+      --tw-ring-offset-shadow: 0 0 #0000;
+***REMOVED***
+  ***REMOVED***
+***REMOVED***
+
+:root ***REMOVED***
+  --background: 210 100% 98%;
+  --foreground: 210 10% 20%;
+  --primary: 220 70% 55%;
+  --primary-foreground: 0 0% 100%;
+  --secondary: 210 10% 96%;
+  --secondary-foreground: 210 10% 18%;
+  --muted: 210 10% 96%;
+  --muted-foreground: 210 5% 40%;
+  --destructive: 0 80% 55%;
+  --destructive-foreground: 0 0% 100%;
+  --border: 210 20% 90%;
+  --input: 210 20% 90%;
+  --ring: 220 70% 55%;
+  --font-geist-sans: var(--font-geist-sans);
+  --font-geist-mono: var(--font-geist-mono);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+***REMOVED***
+
+@media (prefers-color-scheme: dark) ***REMOVED***
+  :root ***REMOVED***
+    --background: 210 10% 10%;
+    --foreground: 0 0% 93%;
+    --primary: 220 70% 60%;
+    --secondary: 210 10% 15%;
+    --muted: 210 10% 15%;
+    --muted-foreground: 210 5% 60%;
+    --border: 210 10% 20%;
+    --input: 210 10% 22%;
+    --ring: 220 70% 60%;
+  ***REMOVED***
+***REMOVED***
