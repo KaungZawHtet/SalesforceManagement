@@ -17,9 +17,6 @@ export interface AppConfig ***REMOVED***
 const REQUIRED_ENV: string[] = [
   'SF_CLIENT_ID',
   'SF_CLIENT_SECRET',
-  'SF_USERNAME',
-  'SF_PASSWORD',
-  'SF_SECURITY_TOKEN',
   'SF_LOGIN_URL',
   'SF_API_VERSION',
   'CORS_ORIGIN',

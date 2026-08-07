@@ -67,9 +67,7 @@ describe('OauthService', () => ***REMOVED***
       'Content-Type': 'application/x-www-form-urlencoded',
 ***REMOVED***);
     const body = init?.body as URLSearchParams;
-    expect(body.get('grant_type')).toBe('password');
-    expect(body.get('username')).toBe('user@example.com');
-    expect(body.get('password')).toBe('passwordsecurity-token');
+    expect(body.get('grant_type')).toBe('client_credentials');
     expect(body.get('client_id')).toBe('client-id');
     expect(body.get('client_secret')).toBe('client-secret');
   ***REMOVED***);

@@ -137,12 +137,12 @@ export function translateAuthError(
     typeof body === 'object' &&
     (body.error === 'invalid_grant' || body.error === 'invalid_client');
   logger.error(`Salesforce authentication failed (status $***REMOVED***response.status***REMOVED***).`);
-  if (!isInvalidGrant) ***REMOVED***
-    return new BadGatewayException(
-      'Salesforce authentication service is unavailable.',
+  if (isInvalidGrant) ***REMOVED***
+    return new UnauthorizedException(
+      'Salesforce authentication failed. Please verify credentials.',
     );
   ***REMOVED***
-  return new UnauthorizedException(
-    'Salesforce authentication failed. Please verify credentials.',
+  return new BadGatewayException(
+    'Salesforce authentication failed. Please verify your credentials and Connected App configuration.',
   );
 ***REMOVED***

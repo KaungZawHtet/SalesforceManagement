@@ -27,7 +27,7 @@ export class TokenCache ***REMOVED***
   set(token: SalesforceTokenResponse, expiresIn: number): void ***REMOVED***
     this.cache = ***REMOVED***
       accessToken: token.access_token,
-      instanceUrl: token.instance_url,
+      instanceUrl: token.instance_url || '',
       expiresAt: Date.now() + expiresIn * 1000,
 ***REMOVED***;
   ***REMOVED***

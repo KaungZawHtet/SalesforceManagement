@@ -37,11 +37,9 @@ export class OauthService ***REMOVED***
     const config = this.getSalesforceConfig();
 
     const body = new URLSearchParams();
-    body.append('grant_type', 'password');
+    body.append('grant_type', 'client_credentials');
     body.append('client_id', config.clientId);
     body.append('client_secret', config.clientSecret);
-    body.append('username', config.username);
-    body.append('password', `$***REMOVED***config.password***REMOVED***$***REMOVED***config.securityToken***REMOVED***`);
 
     const url = `$***REMOVED***config.loginUrl***REMOVED***/services/oauth2/token`;
     this.logger.log('Requesting a new Salesforce access token');
@@ -73,7 +71,12 @@ export class OauthService ***REMOVED***
       throw translateAuthError(response, payload);
 ***REMOVED***
 
+    // For client_credentials flow, we get access_token and instance_url
     const expiresIn = this.parseExpiresIn(payload);
+    // Ensure instance_url is set (client_credentials may return instance_url)
+    if (!payload.instance_url) ***REMOVED***
+      payload.instance_url = config.loginUrl;
+***REMOVED***
     this.tokenCache.set(payload, expiresIn);
 
     const cached = this.tokenCache.getValid();
