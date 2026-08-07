@@ -1,0 +1,8 @@
+***REMOVED***
+  "$schema": "https://json.schemastore.org/nest-cli",
+  "collection": "@nestjs/schematics",
+  "sourceRoot": "src",
+  "compilerOptions": ***REMOVED***
+    "deleteOutDir": true
+  ***REMOVED***
+***REMOVED***

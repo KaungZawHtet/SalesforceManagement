@@ -1,0 +1,32 @@
+# Version control
+.git
+.gitignore
+
+# Dependencies & build artifacts
+**/node_modules
+**/dist
+**/.cache
+*.tsbuildinfo
+
+# Environment & secrets (injected at runtime via docker-compose)
+.env
+**/.env
+**/.env.local
+*.pem
+*.key
+
+# Local tooling / editors
+.kilo
+.kilocode
+.opencode
+.idea
+.vscode
+*.code-workspace
+
+# Logs & OS files
+*.log
+logs/
+.DS_Store
+
+# Frontend is built as a separate service
+frontend
