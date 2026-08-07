@@ -7,4 +7,18 @@ services:
       - "3000:3000"
     env_file:
       - .env
+    environment:
+      - CORS_ORIGIN=http://localhost:3001
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        NEXT_PUBLIC_API_URL: http://localhost:3000
+    ports:
+      - "3001:3001"
+    depends_on:
+      - backend
     restart: unless-stopped
