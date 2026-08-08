@@ -1,0 +1,153 @@
+name: Terraform
+
+on:
+  pull_request:
+    paths:
+      - "infra/**"
+      - ".github/workflows/terraform.yml"
+  workflow_dispatch:
+    inputs:
+      action:
+        description: Terraform action to run
+        required: true
+        type: choice
+        options:
+          - plan
+          - apply
+          - destroy
+        default: plan
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: terraform-dev
+  cancel-in-progress: false
+
+env:
+  TF_WORKING_DIR: infra/environments/dev
+  AWS_REGION: ${{ vars.AWS_REGION }}
+  AWS_ACCOUNT_ID: ${{ vars.AWS_ACCOUNT_ID }}
+
+jobs:
+  validate:
+    name: Validate Terraform
+    if: ${{ github.event_name == 'pull_request' || inputs.action == 'plan' || inputs.action == '' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.10.0
+
+      - name: Check formatting
+        run: terraform fmt -check -recursive infra
+
+      - name: Validate bootstrap configuration
+        working-directory: infra/bootstrap
+        run: |
+          terraform init -backend=false
+          terraform validate
+
+      - name: Configure backend for validation
+        working-directory: ${{ env.TF_WORKING_DIR }}
+        run: cp backend.tf.example backend.tf
+
+      - name: Initialize Terraform
+        working-directory: ${{ env.TF_WORKING_DIR }}
+        run: terraform init -backend=false
+
+      - name: Validate dev configuration
+        working-directory: ${{ env.TF_WORKING_DIR }}
+        run: terraform validate
+
+  plan:
+    name: Terraform plan
+    if: ${{ github.event_name == 'pull_request' || inputs.action == 'plan' || inputs.action == '' }}
+    needs: validate
+    runs-on: ubuntu-latest
+    environment: dev
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.10.0
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-region: ${{ env.AWS_REGION }}
+          role-to-assume: arn:aws:iam::${{ env.AWS_ACCOUNT_ID }}:role/salesforce-manager-github-actions
+          role-session-name: terraform-plan-${{ github.run_id }}
+
+      - name: Configure Terraform files
+        working-directory: ${{ env.TF_WORKING_DIR }}
+        run: |
+          cp backend.tf.example backend.tf
+          cp terraform.tfvars.example terraform.tfvars
+          sed -i "s/ACCOUNT_ID/${AWS_ACCOUNT_ID}/g" terraform.tfvars
+
+      - name: Initialize Terraform
+        working-directory: ${{ env.TF_WORKING_DIR }}
+        run: terraform init
+
+      - name: Create plan
+        working-directory: ${{ env.TF_WORKING_DIR }}
+        run: terraform plan -input=false -out=tfplan
+
+      - name: Upload plan artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: terraform-plan-${{ github.sha }}
+          path: ${{ env.TF_WORKING_DIR }}/tfplan
+          retention-days: 7
+
+  apply-or-destroy:
+    name: Terraform ${{ inputs.action }}
+    if: ${{ github.event_name == 'workflow_dispatch' && (inputs.action == 'apply' || inputs.action == 'destroy') }}
+    runs-on: ubuntu-latest
+    environment:
+      name: dev
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.10.0
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-region: ${{ env.AWS_REGION }}
+          role-to-assume: arn:aws:iam::${{ env.AWS_ACCOUNT_ID }}:role/salesforce-manager-github-actions
+          role-session-name: terraform-${{ inputs.action }}-${{ github.run_id }}
+
+      - name: Configure Terraform files
+        working-directory: ${{ env.TF_WORKING_DIR }}
+        run: |
+          cp backend.tf.example backend.tf
+          cp terraform.tfvars.example terraform.tfvars
+          sed -i "s/ACCOUNT_ID/${AWS_ACCOUNT_ID}/g" terraform.tfvars
+
+      - name: Initialize Terraform
+        working-directory: ${{ env.TF_WORKING_DIR }}
+        run: terraform init
+
+      - name: Apply infrastructure
+        if: ${{ inputs.action == 'apply' }}
+        working-directory: ${{ env.TF_WORKING_DIR }}
+        run: terraform apply -input=false -auto-approve
+
+      - name: Destroy infrastructure
+        if: ${{ inputs.action == 'destroy' }}
+        working-directory: ${{ env.TF_WORKING_DIR }}
+        run: terraform destroy -input=false -auto-approve

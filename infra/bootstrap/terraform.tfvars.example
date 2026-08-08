@@ -1,0 +1,4 @@
+aws_region       = "us-east-1"
+project_name     = "salesforce-manager"
+environment      = "dev"
+state_bucket_name = "salesforce-manager-terraform-state-REPLACE-ME"

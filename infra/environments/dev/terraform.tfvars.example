@@ -1,0 +1,11 @@
+aws_region       = "us-east-1"
+project_name     = "salesforce-manager"
+environment      = "dev"
+availability_zones = ["us-east-1a", "us-east-1b"]
+
+# Set these after creating the empty Secrets Manager containers.
+salesforce_client_id_secret_arn     = "arn:aws:secretsmanager:us-east-1:ACCOUNT_ID:secret:salesforce-manager/dev/sf-client-id-REPLACE"
+salesforce_client_secret_arn        = "arn:aws:secretsmanager:us-east-1:ACCOUNT_ID:secret:salesforce-manager/dev/sf-client-secret-REPLACE"
+
+# Existing role created outside Terraform.
+github_actions_role_arn = "arn:aws:iam::ACCOUNT_ID:role/salesforce-manager-github-actions"

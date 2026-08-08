@@ -1,0 +1,19 @@
+terraform {
+  required_version = ">= 1.10.0, < 2.0.0"
+
+  required_providers {
+    aws = {
+      source  = "hashicorp/aws"
+      version = "~> 5.0"
+    }
+  }
+
+  # Create the bootstrap bucket first, then uncomment and configure this block.
+  # backend "s3" {
+  #   bucket       = "salesforce-manager-terraform-state-REPLACE-ME"
+  #   key          = "dev/terraform.tfstate"
+  #   region       = "us-east-1"
+  #   encrypt      = true
+  #   use_lockfile = true
+  # }
+}

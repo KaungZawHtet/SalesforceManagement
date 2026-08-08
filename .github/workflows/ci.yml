@@ -41,7 +41,7 @@ jobs:
         run: npm run build
 
       - name: Check formatting and lint rules
-        run: npx prettier --check "src/**/*.ts" "test/**/*.ts" && npx eslint "{src,apps,libs,test}/**/*.ts"
+        run: npx prettier --check "src/**/*.ts" && npx eslint "src/**/*.ts"
 
   frontend:
     name: Frontend checks

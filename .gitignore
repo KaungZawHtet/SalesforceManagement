@@ -139,3 +139,14 @@ frontend/.env.local
 
 backend/.env
 backend/.env.local
+
+# Terraform
+.terraform/
+*.tfstate
+*.tfstate.*
+*.tfplan
+crash.log
+crash.*.log
+infra/**/.terraform.lock.hcl
+infra/**/terraform.tfvars
+infra/**/backend.tfvars

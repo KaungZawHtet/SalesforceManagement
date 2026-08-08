@@ -18,6 +18,10 @@ Store committed, user-facing architecture diagrams under `docs/architecture/`. U
 - GitHub Actions is the CI/CD platform.
 - Terraform state is stored remotely in S3 with native state locking; only a low-cost `dev/demo` environment is deployed initially.
 - Salesforce credentials are stored in AWS Secrets Manager and injected only into the backend task.
+- Terraform creates Secrets Manager secret containers, but secret values are populated separately through the AWS Console or CLI and never enter Terraform state.
+- Terraform references the already-created `salesforce-manager-github-actions` role/OIDC setup by ARN; it does not manage or replace that trust relationship.
+- Terraform owns AWS infrastructure, ECR repositories, ECS services, and baseline task definitions. GitHub Actions owns image tags and application deployment revisions.
+- Initial ECS bootstrap is two-phase: Terraform creates services with a temporary public placeholder image, then GitHub Actions pushes the real commit-tagged images and updates ECS.
 
 ## Target Architecture
 
@@ -45,7 +49,7 @@ GitHub Actions: test -> build -> scan -> push -> deploy -> smoke test
 
 Use one public ALB and two target groups. Route `/api/*` to the backend, preserving the existing backend route prefix. The frontend should be built with `NEXT_PUBLIC_API_URL` set to the public ALB base URL or an empty same-origin value, depending on the existing API client implementation. Prefer same-origin `/api` calls to eliminate CORS complexity; if the current client requires an absolute URL, pass the ALB URL as a build argument and set backend `CORS_ORIGIN` to the same ALB URL.
 
-Keep ECS tasks in private subnets. The ALB is internet-facing in public subnets. Private task subnets need outbound access to ECR, CloudWatch Logs, Secrets Manager, and Salesforce; implement this initially with a NAT gateway for clarity and reliability, while documenting that VPC endpoints can reduce recurring cost in a production version.
+Keep ECS tasks in private subnets. The ALB is internet-facing in public subnets. Private task subnets need outbound access to ECR, CloudWatch Logs, Secrets Manager, and Salesforce. Use one NAT gateway in a single availability zone for this short-lived demo to limit recurring cost; document one NAT gateway per AZ as the production availability option and VPC endpoints as a future cost optimization.
 
 ## Terraform Layout
 
@@ -89,7 +93,7 @@ Keep the first implementation modular but small. Avoid a generic multi-cloud abs
 - Create a VPC with DNS support enabled.
 - Create two public subnets and two private subnets across two availability zones.
 - Create an internet gateway for public subnets.
-- Create a NAT gateway for private subnet egress, with an explicit variable to disable it only if an alternative egress design is supplied.
+- Create one NAT gateway for private subnet egress, with an explicit variable to disable it only if an alternative egress design is supplied.
 - Create public and private route tables and associations.
 - Create security groups with least-privilege rules:
   - ALB: inbound TCP 80 from the internet; outbound to task security groups.
@@ -105,8 +109,9 @@ Keep the first implementation modular but small. Avoid a generic multi-cloud abs
 
 ### Secrets Module
 
-- Reference pre-created Secrets Manager secrets by ARN where possible, so Terraform never receives plaintext Salesforce values.
-- Store Salesforce client ID and client secret as separate secrets, or reference a JSON secret with narrowly scoped extraction if the chosen ECS definition supports it cleanly.
+- Create two Secrets Manager secret containers without values: `salesforce-manager/dev/sf-client-id` and `salesforce-manager/dev/sf-client-secret`.
+- Populate secret values outside Terraform using the AWS Console or CLI. Do not use `aws_secretsmanager_secret_version` with plaintext Terraform variables.
+- Store Salesforce client ID and client secret as separate secrets and inject their ARNs into the backend task definition.
 - Inject only `SF_CLIENT_ID` and `SF_CLIENT_SECRET` into the backend task definition using ECS `secrets` entries.
 - Keep non-sensitive configuration in task definition environment variables: `PORT`, `SF_LOGIN_URL`, `SF_API_VERSION`, and `CORS_ORIGIN`.
 - Grant the ECS task execution role permission to retrieve only the referenced secret ARNs. Do not grant broad Secrets Manager access.
@@ -117,6 +122,7 @@ Keep the first implementation modular but small. Avoid a generic multi-cloud abs
 - Create an ECS cluster with Container Insights enabled if the cost impact is acceptable for the demo; otherwise document it as an optional toggle.
 - Create separate task definitions and services for frontend and backend using Fargate.
 - Use a small demo size, such as `0.25 vCPU` and `0.5 GB` per task, with desired count `1` initially.
+- Create baseline task definitions and services with a temporary public placeholder image that is available before the first apply; keep the image tag configurable and ensure the first GitHub deployment replaces it.
 - Set deployment circuit breakers with rollback enabled.
 - Configure `awslogs` logging to separate CloudWatch log groups with retention suitable for a demo.
 - Configure health checks:
@@ -156,7 +162,7 @@ Review and implement only the deployment changes needed to support the AWS topol
 6. Keep Salesforce credentials server-side and preserve the existing backend-only Salesforce integration.
 
 
-Add workflows with separate pull request validation and deployment responsibilities.
+Add workflows with separate pull request validation, Terraform plan/apply, and application deployment responsibilities.
 
 ### Pull Request Workflow
 
@@ -165,7 +171,7 @@ Add workflows with separate pull request validation and deployment responsibilit
 - Run frontend lint/build and Playwright tests with the required test setup.
 - Build both Docker images to catch Dockerfile and standalone-output regressions.
 - Run a container vulnerability scan, such as Trivy, and fail or report according to the chosen severity threshold.
-- Run `terraform fmt -check`, `terraform validate`, and `terraform plan` against the demo environment using read-only/plan permissions where practical.
+- Run `terraform fmt -check`, `terraform validate`, and `terraform plan` against the demo environment using the existing GitHub OIDC role and remote state.
 
 ### Main Deployment Workflow
 
@@ -185,21 +191,23 @@ Add workflows with separate pull request validation and deployment responsibilit
 
 ### Terraform CI/CD Boundary
 
-- Use a separate workflow or manually approved job for `terraform apply`.
+- Add `.github/workflows/terraform.yml` with pull-request formatting/validation/plan and a manually approved `workflow_dispatch` apply/destroy path.
 - Run `terraform plan` on pull requests and publish the plan artifact/output.
 - Apply only from the protected main branch.
-- Scope the GitHub OIDC role to the demo account, required Terraform resources, and the relevant state bucket.
+- Use the existing `salesforce-manager-github-actions` OIDC role by ARN; do not recreate or manage its provider/trust policy in Terraform.
 - Never run `terraform apply` automatically on arbitrary pull requests.
+- Keep Terraform responsible for infrastructure and baseline task definitions; do not put changing application image tags in Terraform after bootstrap.
 
 
 1. Audit and, if necessary, correct `.gitignore`/`.dockerignore` coverage for `.env`, `dist`, `.next`, and Terraform state files.
 2. Verify local Docker Compose and existing unit/E2E tests before infrastructure changes.
 3. Add Terraform bootstrap and create the encrypted, versioned S3 state bucket.
-4. Add the dev environment configuration and network, ECR, IAM, Secrets Manager references, ECS, ALB, and CloudWatch resources.
-5. Build and push initial images manually or through a one-time bootstrap workflow using immutable SHA tags.
-6. Apply Terraform and verify target health, ALB routing, frontend loading, backend health, and Salesforce access.
-7. Add GitHub OIDC and CI/CD workflows, then validate deployment from a branch/merge in a controlled demo environment.
-8. Add operational documentation: prerequisites, AWS bootstrap, secret creation, GitHub configuration, deploy, smoke test, rollback, and destroy commands.
+4. Add the dev environment configuration and network, ECR, IAM, Secrets Manager containers, ECS, ALB, and CloudWatch resources.
+5. Populate the two Secrets Manager values outside Terraform and confirm their ARNs are referenced by the backend task definition.
+6. Apply Terraform with placeholder ECS images and verify network, target groups, service health, and ALB routing.
+7. Adjust the existing deployment workflow to consume stable Terraform-created ECS names/outputs, then build and push initial commit-SHA images through GitHub Actions.
+8. Verify frontend loading, backend health, Salesforce access, and smoke tests through the ALB.
+9. Add Terraform plan/apply/destroy workflow controls and operational documentation: prerequisites, bootstrap, secret creation, GitHub configuration, deploy, rollback, and destroy commands.
    - Include `docs/architecture/aws-deployment.md` with the request-flow, AWS infrastructure, and CI/CD diagrams.
 9. Demonstrate rollback by redeploying a previous immutable image tag and verifying ECS deployment circuit-breaker behavior.
 10. Destroy the demo environment after the interview when not needed, preserving the state bucket only if it is intended for future use.
@@ -207,6 +215,8 @@ Add workflows with separate pull request validation and deployment responsibilit
 
 - `terraform fmt -check` passes for all Terraform files.
 - `terraform init`, `terraform validate`, and `terraform plan` complete without plaintext secret values.
+- Terraform does not manage the existing GitHub OIDC provider or `salesforce-manager-github-actions` role.
+- Terraform creates ECS services with the placeholder image, and the first application deployment replaces it with a commit-SHA image.
 - Terraform plan shows no public IP assignment to ECS tasks.
 - ALB listener forwards default traffic to frontend and `/api/*` traffic to backend.
 - Backend target health succeeds on `/api/health`.
@@ -228,7 +238,7 @@ Add workflows with separate pull request validation and deployment responsibilit
 - Why immutable image tags: deployments are traceable to a commit and rollback is deterministic.
 - Why remote Terraform state and OIDC: collaboration and CI/CD avoid local state drift and long-lived cloud credentials.
 - Why no database: Salesforce is the system of record and the current application does not require persistence beyond Salesforce.
-- Cost controls: one task per service, small Fargate sizes, short log retention, lifecycle cleanup, and explicit teardown; NAT gateway cost should be called out as the main demo infrastructure trade-off.
+- Cost controls: one task per service, small Fargate sizes, short log retention, lifecycle cleanup, one NAT gateway, and explicit teardown; NAT gateway cost should be called out as the main demo infrastructure trade-off.
 
 
 - EKS/Kubernetes.

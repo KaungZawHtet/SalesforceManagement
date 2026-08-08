@@ -22,6 +22,8 @@ env:
   ECS_CLUSTER: ${{ vars.ECS_CLUSTER }}
   ECS_FRONTEND_SERVICE: ${{ vars.ECS_FRONTEND_SERVICE }}
   ECS_BACKEND_SERVICE: ${{ vars.ECS_BACKEND_SERVICE }}
+  ECS_FRONTEND_TASK_DEFINITION: ${{ vars.ECS_FRONTEND_TASK_DEFINITION }}
+  ECS_BACKEND_TASK_DEFINITION: ${{ vars.ECS_BACKEND_TASK_DEFINITION }}
   ECS_FRONTEND_CONTAINER: ${{ vars.ECS_FRONTEND_CONTAINER || 'frontend' }}
   ECS_BACKEND_CONTAINER: ${{ vars.ECS_BACKEND_CONTAINER || 'backend' }}
   ALB_URL: ${{ vars.ALB_URL }}
@@ -45,10 +47,12 @@ jobs:
           ECS_CLUSTER: ${{ env.ECS_CLUSTER }}
           ECS_FRONTEND_SERVICE: ${{ env.ECS_FRONTEND_SERVICE }}
           ECS_BACKEND_SERVICE: ${{ env.ECS_BACKEND_SERVICE }}
+          ECS_FRONTEND_TASK_DEFINITION: ${{ env.ECS_FRONTEND_TASK_DEFINITION }}
+          ECS_BACKEND_TASK_DEFINITION: ${{ env.ECS_BACKEND_TASK_DEFINITION }}
           ALB_URL: ${{ env.ALB_URL }}
         run: |
           set -euo pipefail
-          for variable in AWS_REGION AWS_ACCOUNT_ID ECR_FRONTEND_REPOSITORY ECR_BACKEND_REPOSITORY ECS_CLUSTER ECS_FRONTEND_SERVICE ECS_BACKEND_SERVICE ALB_URL; do
+          for variable in AWS_REGION AWS_ACCOUNT_ID ECR_FRONTEND_REPOSITORY ECR_BACKEND_REPOSITORY ECS_CLUSTER ECS_FRONTEND_SERVICE ECS_BACKEND_SERVICE ECS_FRONTEND_TASK_DEFINITION ECS_BACKEND_TASK_DEFINITION ALB_URL; do
             if [ -z "${!variable}" ]; then
               echo "Missing GitHub repository variable: ${variable}" >&2
               exit 1
@@ -102,11 +106,11 @@ jobs:
       - name: Download current ECS task definitions
         run: |
           aws ecs describe-task-definition \
-            --task-definition "$ECS_FRONTEND_SERVICE" \
+            --task-definition "$ECS_FRONTEND_TASK_DEFINITION" \
             --query taskDefinition \
             --output json > /tmp/frontend-task-definition.json
           aws ecs describe-task-definition \
-            --task-definition "$ECS_BACKEND_SERVICE" \
+            --task-definition "$ECS_BACKEND_TASK_DEFINITION" \
             --query taskDefinition \
             --output json > /tmp/backend-task-definition.json
 
