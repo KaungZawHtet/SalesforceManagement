@@ -1,4 +1,4 @@
-import ***REMOVED*** Injectable, Logger ***REMOVED*** from '@nestjs/common';
+import ***REMOVED*** BadGatewayException, Injectable, Logger ***REMOVED*** from '@nestjs/common';
 import ***REMOVED*** SalesforceClient ***REMOVED*** from './salesforce.client';
 import type ***REMOVED*** Account, AccountListResponse ***REMOVED*** from '../accounts/types/account';
 import type ***REMOVED*** CreateAccountDto ***REMOVED*** from '../accounts/dto/create-account.dto';
@@ -32,6 +32,17 @@ export class SalesforceService ***REMOVED***
       '/sobjects/Account',
       ***REMOVED*** method: 'POST', body: JSON.stringify(payload) ***REMOVED***,
     );
+    if (
+      !created ||
+      created.success !== true ||
+      typeof created.id !== 'string' ||
+      created.id.trim() === ''
+    ) ***REMOVED***
+      throw new BadGatewayException(
+        'Salesforce returned an invalid account creation response.',
+      );
+***REMOVED***
+
     const id = created.id;
     this.logger.log(`Created Salesforce Account $***REMOVED***id***REMOVED***`);
     const record = await this.client.request<SalesforceAccountRecord>(

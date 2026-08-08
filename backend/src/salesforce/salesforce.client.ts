@@ -27,13 +27,7 @@ export class SalesforceClient ***REMOVED***
     try ***REMOVED***
       response = await this.fetchWithAuth(path, init, token);
 ***REMOVED*** catch (err) ***REMOVED***
-      if (err instanceof Error && err.name === 'AbortError') ***REMOVED***
-        this.logger.warn(
-          `Salesforce request timed out after $***REMOVED***SF_TIMEOUT_MS***REMOVED***ms`,
-        );
-        throw translateSalesforceError(504, ***REMOVED******REMOVED***);
-  ***REMOVED***
-      throw err;
+      throw this.translateRequestError(err);
 ***REMOVED***
 
     if (response.status === 401) ***REMOVED***
@@ -42,7 +36,11 @@ export class SalesforceClient ***REMOVED***
       );
       this.oauthService.invalidate();
       const refreshedToken = await this.oauthService.authenticate();
-      response = await this.fetchWithAuth(path, init, refreshedToken);
+      try ***REMOVED***
+        response = await this.fetchWithAuth(path, init, refreshedToken);
+  ***REMOVED*** catch (err) ***REMOVED***
+        throw this.translateRequestError(err);
+  ***REMOVED***
       if (response.status === 401) ***REMOVED***
         const body = await this.parseBody(response);
         throw translateSalesforceError(401, body);
@@ -108,6 +106,16 @@ export class SalesforceClient ***REMOVED***
 ***REMOVED*** catch ***REMOVED***
       return text;
 ***REMOVED***
+  ***REMOVED***
+
+  private translateRequestError(err: unknown) ***REMOVED***
+    if (err instanceof Error && err.name === 'AbortError') ***REMOVED***
+      this.logger.warn(`Salesforce request timed out after $***REMOVED***SF_TIMEOUT_MS***REMOVED***ms`);
+      return translateSalesforceError(504, ***REMOVED******REMOVED***);
+***REMOVED***
+
+    this.logger.error('Network error while contacting the Salesforce API');
+    return translateSalesforceError(502, ***REMOVED******REMOVED***);
   ***REMOVED***
 
   private buildUrl(

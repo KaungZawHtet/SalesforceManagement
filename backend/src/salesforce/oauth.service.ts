@@ -71,12 +71,18 @@ export class OauthService ***REMOVED***
       throw translateAuthError(response, payload);
 ***REMOVED***
 
-    // For client_credentials flow, we get access_token and instance_url
-    const expiresIn = this.parseExpiresIn(payload);
-    // Ensure instance_url is set (client_credentials may return instance_url)
-    if (!payload.instance_url) ***REMOVED***
-      payload.instance_url = config.loginUrl;
+    if (
+      typeof payload.access_token !== 'string' ||
+      payload.access_token.trim() === '' ||
+      typeof payload.instance_url !== 'string' ||
+      payload.instance_url.trim() === ''
+    ) ***REMOVED***
+      throw new BadGatewayException(
+        'Salesforce authentication returned an invalid token response.',
+      );
 ***REMOVED***
+
+    const expiresIn = this.parseExpiresIn(payload);
     this.tokenCache.set(payload, expiresIn);
 
     const cached = this.tokenCache.getValid();

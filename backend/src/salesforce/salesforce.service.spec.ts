@@ -1,6 +1,7 @@
 import ***REMOVED*** SalesforceService ***REMOVED*** from './salesforce.service';
 import ***REMOVED*** SalesforceClient ***REMOVED*** from './salesforce.client';
 import ***REMOVED*** CreateAccountDto ***REMOVED*** from '../accounts/dto/create-account.dto';
+import ***REMOVED*** BadGatewayException ***REMOVED*** from '@nestjs/common';
 
 type SalesforceRequestMock = jest.MockedFunction<
   (path: string, init?: RequestInit) => Promise<unknown>
@@ -158,5 +159,14 @@ describe('SalesforceService', () => ***REMOVED***
 
     const init = client.request.mock.calls[0][1];
     expect(JSON.parse(init.body as string)).toEqual(***REMOVED*** Name: 'Solo' ***REMOVED***);
+  ***REMOVED***);
+
+  it('rejects a malformed create response before fetching the record', async () => ***REMOVED***
+    client.request.mockResolvedValueOnce(***REMOVED*** success: true, id: '' ***REMOVED***);
+
+    await expect(service.createAccount(***REMOVED*** name: 'Broken' ***REMOVED***)).rejects.toThrow(
+      BadGatewayException,
+    );
+    expect(client.request).toHaveBeenCalledTimes(1);
   ***REMOVED***);
 ***REMOVED***);

@@ -15,14 +15,14 @@ Users can:
 Browser
    │
    ▼
-Next.js Frontend            (future – separate service)
+Next.js Frontend            (port 3001)
    │
 REST API
    │
    ▼
 NestJS Backend              (this project, port 3000)
    │
-OAuth 2.0 Password Grant + REST API
+OAuth 2.0 client credentials + REST API
    │
    ▼
 Salesforce REST API
@@ -110,16 +110,15 @@ Copy `backend/.env.example` to `backend/.env` for local development:
 | `SF_LOGIN_URL`       | Salesforce login host (e.g. `https://login.salesforce.com`, `https://test.salesforce.com` for sandboxes) |
 | `SF_CLIENT_ID`       | Connected App Client Id (from Salesforce Setup → App Manager) |
 | `SF_CLIENT_SECRET`   | Connected App Client Secret                       |
-| `SF_USERNAME`        | Salesforce user email/username                    |
-| `SF_PASSWORD`        | Salesforce user password                          |
-| `SF_SECURITY_TOKEN`  | Salesforce security token (from account settings or email) |
 | `SF_API_VERSION`     | Salesforce REST API version (e.g. `60.0` – check [developer docs](https://developer.salesforce.com/docs/atlas.en-us.api_rest.meta/api_rest/intro_versions.htm)) |
 | `CORS_ORIGIN`        | Allowed frontend origin (e.g. `http://localhost:3001`) |
 | `PORT`               | Backend listen port (default `3000`)              |
 
 Copy root `.env.example` to `.env` for Docker Compose (contains same vars).
 
-> **Important**: A missing required variable prevents the application from starting with a clear error message. The Password Grant requires all Salesforce credentials; ensure the Connected App has these OAuth scopes enabled: `api`, `refresh_token`, `full`.
+> **Important**: A missing or malformed required variable prevents the application from starting with a clear error message. The Connected App must support the OAuth `client_credentials` grant and the Salesforce API scope required by the integration.
+
+> **Security**: Any Salesforce credentials that were previously committed to Git must be rotated or revoked in Salesforce. Removing a secret from the working tree does not remove it from Git history.
 
 ### Frontend (`frontend/.env.local`)
 
@@ -133,17 +132,16 @@ Copy `frontend/.env.example` to `frontend/.env.local` for local development:
 
 ---
 
-## Authentication Decision (OAuth 2.0 – Password Grant)
+## Authentication Decision (OAuth 2.0 – Client Credentials)
 
 This is an interview assignment for a **server-to-server** integration. The backend
-authenticates to Salesforce using the OAuth 2.0 **user-password grant**: the password
-is sent as `password + security token`. The resulting access token and instance URL are
-cached in memory for reuse, refreshed on expiry (60-second safety margin) and on `401`
-responses.
+authenticates to Salesforce using the OAuth 2.0 **client credentials grant**. Only the
+Connected App client ID and secret are used. The resulting access token and instance
+URL are cached in memory for reuse, refreshed on expiry (60-second safety margin) and
+on `401` responses.
 
-> The Password Grant is used only because this assignment has no interactive user login
-> flow. For a production system with real end users, switch to the Authorization Code /
-> PKCE flow so credentials never touch the backend.
+No Salesforce credentials are sent to the browser, and no interactive user authentication
+is implemented because that is outside this assignment's scope.
 
 ---
 
@@ -181,8 +179,7 @@ npm run start:dev
 cd frontend
 cp .env.example .env.local  # edit NEXT_PUBLIC_API_URL
 npm install
-npm run dev                 # http://localhost:3001
-```
+npm run dev -- --port 3001  # http://localhost:3001
 ```
 
 ---

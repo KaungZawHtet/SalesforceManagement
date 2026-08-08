@@ -1,5 +1,10 @@
 import ***REMOVED*** ConfigService ***REMOVED*** from '@nestjs/config';
-import ***REMOVED*** BadRequestException, UnauthorizedException ***REMOVED*** from '@nestjs/common';
+import ***REMOVED***
+  BadRequestException,
+  HttpException,
+  ServiceUnavailableException,
+  UnauthorizedException,
+***REMOVED*** from '@nestjs/common';
 import ***REMOVED*** SalesforceClient ***REMOVED*** from './salesforce.client';
 import ***REMOVED*** OauthService ***REMOVED*** from './oauth.service';
 import ***REMOVED*** CachedToken ***REMOVED*** from './token-cache';
@@ -11,9 +16,6 @@ global.fetch = fetchMock;
 const salesforceConfig: SalesforceConfig = ***REMOVED***
   clientId: 'client-id',
   clientSecret: 'client-secret',
-  username: 'user@example.com',
-  password: 'password',
-  securityToken: 'security-token',
   loginUrl: 'https://login.salesforce.com',
   apiVersion: '60.0',
 ***REMOVED***;
@@ -151,6 +153,40 @@ describe('SalesforceClient', () => ***REMOVED***
     expect((fetchMock.mock.calls[0][1] as RequestInit).method).toBe('POST');
     expect((fetchMock.mock.calls[0][1] as RequestInit).body).toBe(
       JSON.stringify(***REMOVED*** Name: 'Acme' ***REMOVED***),
+    );
+  ***REMOVED***);
+
+  it('translates an initial network failure into a gateway error', async () => ***REMOVED***
+    oauthService.authenticate.mockResolvedValue(makeToken());
+    fetchMock.mockRejectedValue(new TypeError('network down'));
+
+    await expect(client.request('/query')).rejects.toThrow(
+      ServiceUnavailableException,
+    );
+  ***REMOVED***);
+
+  it('translates a network failure during token retry', async () => ***REMOVED***
+    oauthService.authenticate
+      .mockResolvedValueOnce(makeToken('first'))
+      .mockResolvedValueOnce(makeToken('second'));
+    fetchMock
+      .mockResolvedValueOnce(makeResponse(401, []))
+      .mockRejectedValueOnce(new TypeError('network down'));
+
+    await expect(client.request('/query')).rejects.toThrow(
+      ServiceUnavailableException,
+    );
+    expect(oauthService.invalidate).toHaveBeenCalledTimes(1);
+  ***REMOVED***);
+
+  it('translates an aborted request into a 504 error', async () => ***REMOVED***
+    oauthService.authenticate.mockResolvedValue(makeToken());
+    const error = new Error('aborted');
+    error.name = 'AbortError';
+    fetchMock.mockRejectedValue(error);
+
+    await expect(client.request('/query')).rejects.toMatchObject(
+      new HttpException('Salesforce request timed out. Please try again.', 504),
     );
   ***REMOVED***);
 ***REMOVED***);

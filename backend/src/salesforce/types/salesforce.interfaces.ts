@@ -1,10 +1,10 @@
 export interface SalesforceTokenResponse ***REMOVED***
   access_token: string;
-  instance_url: string;
-  id: string;
-  token_type: string;
-  issued_at: string;
-  signature: string;
+  instance_url?: string;
+  id?: string;
+  token_type?: string;
+  issued_at?: string;
+  signature?: string;
   scope?: string;
   refresh_token?: string;
   community_id?: string;

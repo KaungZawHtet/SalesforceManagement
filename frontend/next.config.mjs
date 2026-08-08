@@ -1,6 +1,8 @@
 const nextConfig = ***REMOVED***
-  swcMinify: true,
   output: 'standalone',
+  turbopack: ***REMOVED***
+    root: process.cwd(),
+  ***REMOVED***,
 ***REMOVED***;
 
 export default nextConfig;

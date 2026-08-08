@@ -1,3 +1,5 @@
 module.exports = ***REMOVED***
-  plugins: [],
+  plugins: ***REMOVED***
+    '@tailwindcss/postcss': ***REMOVED******REMOVED***,
+  ***REMOVED***,
 ***REMOVED***;

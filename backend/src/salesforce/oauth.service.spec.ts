@@ -11,9 +11,6 @@ global.fetch = fetchMock;
 const salesforceConfig: SalesforceConfig = ***REMOVED***
   clientId: 'client-id',
   clientSecret: 'client-secret',
-  username: 'user@example.com',
-  password: 'password',
-  securityToken: 'security-token',
   loginUrl: 'https://login.salesforce.com',
   apiVersion: '60.0',
 ***REMOVED***;
@@ -105,6 +102,17 @@ describe('OauthService', () => ***REMOVED***
     );
 
     await expect(service.authenticate()).rejects.toThrow(BadGatewayException);
+  ***REMOVED***);
+
+  it.each([
+    ***REMOVED*** access_token: '', instance_url: 'https://instance.salesforce.com' ***REMOVED***,
+    ***REMOVED*** access_token: 'access-token', instance_url: '' ***REMOVED***,
+    ***REMOVED*** access_token: 'access-token' ***REMOVED***,
+***REMOVED***)('rejects a malformed successful token response', async (body) => ***REMOVED***
+    fetchMock.mockResolvedValue(makeResponse(200, body));
+
+    await expect(service.authenticate()).rejects.toThrow(BadGatewayException);
+    expect(cache.getValid()).toBeNull();
   ***REMOVED***);
 
   it('invalidates the cache on demand', async () => ***REMOVED***

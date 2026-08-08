@@ -1,6 +1,6 @@
 'use client';
 
-import ***REMOVED*** useState, useEffect, useRef ***REMOVED*** from 'react';
+import ***REMOVED*** useState, useEffect, useRef, useCallback, startTransition ***REMOVED*** from 'react';
 import ***REMOVED*** getAccounts ***REMOVED*** from '@/lib/api/accounts';
 import ***REMOVED*** type Account, type AccountListResponse ***REMOVED*** from '@/types/account';
 import ***REMOVED*** AccountsTable ***REMOVED*** from '@/components/accounts/accounts-table';
@@ -14,39 +14,53 @@ export function AccountsView() ***REMOVED***
   const isMounted = useRef(true);
 
   useEffect(() => ***REMOVED***
+    isMounted.current = true;
     return () => ***REMOVED***
       isMounted.current = false;
 ***REMOVED***;
   ***REMOVED***, []);
 
-  useEffect(() => ***REMOVED***
-    const fetchAccounts = async () => ***REMOVED***
-      try ***REMOVED***
-        const response: AccountListResponse = await getAccounts();
-        if (isMounted.current) ***REMOVED***
-          setAccounts(response.data);
-          setError(null);
-    ***REMOVED***
-  ***REMOVED*** catch (e) ***REMOVED***
-        const err = e as ***REMOVED*** message: string ***REMOVED***;
-        if (isMounted.current) ***REMOVED***
-          setError(err.message || 'Failed to load accounts');
-          setAccounts([]);
-    ***REMOVED***
-  ***REMOVED*** finally ***REMOVED***
-        if (isMounted.current) ***REMOVED***
-          setLoading(false);
-    ***REMOVED***
+  const loadAccounts = useCallback(async (): Promise<boolean> => ***REMOVED***
+    setLoading(true);
+    setError(null);
+    setAccounts([]);
+
+    try ***REMOVED***
+      const response: AccountListResponse = await getAccounts();
+      if (isMounted.current) ***REMOVED***
+        setAccounts(response.data);
   ***REMOVED***
-***REMOVED***;
-    fetchAccounts();
+      return true;
+***REMOVED*** catch (error) ***REMOVED***
+      const message =
+        error && typeof error === 'object' && 'message' in error &&
+        typeof error.message === 'string'
+          ? error.message
+          : 'Failed to load accounts';
+      if (isMounted.current) ***REMOVED***
+        setError(message);
+        setAccounts([]);
+  ***REMOVED***
+      return false;
+***REMOVED*** finally ***REMOVED***
+      if (isMounted.current) ***REMOVED***
+        setLoading(false);
+  ***REMOVED***
+***REMOVED***
   ***REMOVED***, []);
 
-  const handleCreateSuccess = (newAccount: Account) => ***REMOVED***
-    setAccounts((prev) => [...prev, newAccount]);
-    toast.success('Account created successfully', ***REMOVED***
-      description: 'The account has been added.',
+  useEffect(() => ***REMOVED***
+    startTransition(() => ***REMOVED***
+      void loadAccounts();
 ***REMOVED***);
+  ***REMOVED***, [loadAccounts]);
+
+  const handleCreateSuccess = async () => ***REMOVED***
+    if (await loadAccounts()) ***REMOVED***
+      toast.success('Account created successfully', ***REMOVED***
+        description: 'The account has been added.',
+  ***REMOVED***);
+***REMOVED***
   ***REMOVED***;
 
   return (

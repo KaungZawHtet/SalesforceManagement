@@ -11,16 +11,30 @@ import ***REMOVED*** type Account ***REMOVED*** from '@/types/account';
 import ***REMOVED*** toast ***REMOVED*** from 'sonner';
 
 const formSchema = z.object(***REMOVED***
-  name: z.string().min(1, 'Account name is required').max(255, 'Account name must not exceed 255 characters').trim(),
-  phone: z.string().max(255, 'Phone must not exceed 255 characters').trim().optional(),
-  website: z.string().url('Website must be a valid URL').trim().optional(),
-  industry: z.string().max(255, 'Industry must not exceed 255 characters').trim().optional(),
+  name: z
+    .string()
+    .trim()
+    .min(1, 'Account name is required')
+    .max(255, 'Account name must not exceed 255 characters'),
+  phone: z.preprocess(
+    (value) => (typeof value === 'string' && value.trim() === '' ? undefined : value),
+    z.string().trim().max(255, 'Phone must not exceed 255 characters').optional(),
+  ),
+  website: z.preprocess(
+    (value) => (typeof value === 'string' && value.trim() === '' ? undefined : value),
+    z.string().trim().url('Website must be a valid URL').optional(),
+  ),
+  industry: z.preprocess(
+    (value) => (typeof value === 'string' && value.trim() === '' ? undefined : value),
+    z.string().trim().max(255, 'Industry must not exceed 255 characters').optional(),
+  ),
 ***REMOVED***);
 
 type FormValues = z.infer<typeof formSchema>;
+type FormInput = z.input<typeof formSchema>;
 
 interface CreateAccountFormProps ***REMOVED***
-  onSuccess: (account: Account) => void;
+  onSuccess: (account: Account) => void | Promise<void>;
 ***REMOVED***
 
 export function CreateAccountForm(***REMOVED*** onSuccess ***REMOVED***: CreateAccountFormProps) ***REMOVED***
@@ -29,24 +43,27 @@ export function CreateAccountForm(***REMOVED*** onSuccess ***REMOVED***: CreateA
     handleSubmit,
     formState: ***REMOVED*** errors, isSubmitting ***REMOVED***,
     reset,
-  ***REMOVED*** = useForm<FormValues>(***REMOVED***
+  ***REMOVED*** = useForm<FormInput, unknown, FormValues>(***REMOVED***
     resolver: zodResolver(formSchema),
   ***REMOVED***);
 
   const onSubmit = async (data: FormValues) => ***REMOVED***
-    const account = await createAccount(***REMOVED***
-      name: data.name,
-      phone: data.phone?.trim() || undefined,
-      website: data.website?.trim() || undefined,
-      industry: data.industry?.trim() || undefined,
-***REMOVED***);
-    
-    if (account) ***REMOVED***
-      toast.success('Account created successfully', ***REMOVED***
-        description: 'The account has been added.',
+    try ***REMOVED***
+      const account = await createAccount(***REMOVED***
+        name: data.name,
+        phone: data.phone,
+        website: data.website,
+        industry: data.industry,
   ***REMOVED***);
       reset();
-      onSuccess(account);
+      await onSuccess(account);
+***REMOVED*** catch (error) ***REMOVED***
+      const message =
+        error && typeof error === 'object' && 'message' in error &&
+        typeof error.message === 'string'
+          ? error.message
+          : 'Something went wrong. Please try again.';
+      toast.error(message);
 ***REMOVED***
   ***REMOVED***;
 
