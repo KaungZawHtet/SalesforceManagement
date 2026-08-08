@@ -63,9 +63,9 @@ resource "aws_ecs_task_definition" "frontend" {
   task_role_arn            = aws_iam_role.task.arn
 
   container_definitions = jsonencode([{
-    name      = "frontend"
-    image     = var.frontend_image
-    essential = true
+    name       = "frontend"
+    image      = var.frontend_image
+    essential  = true
     entryPoint = ["sh", "-c"]
     command    = ["mkdir -p /tmp/site && printf 'placeholder frontend' > /tmp/site/index.html && httpd -f -p 3001 -h /tmp/site"]
     portMappings = [{
@@ -107,9 +107,9 @@ resource "aws_ecs_task_definition" "backend" {
   task_role_arn            = aws_iam_role.task.arn
 
   container_definitions = jsonencode([{
-    name      = "backend"
-    image     = var.backend_image
-    essential = true
+    name       = "backend"
+    image      = var.backend_image
+    essential  = true
     entryPoint = ["sh", "-c"]
     command    = ["mkdir -p /tmp/site/api && printf '{\"status\":\"ok\"}' > /tmp/site/api/health && httpd -f -p 3000 -h /tmp/site"]
     portMappings = [{
@@ -148,11 +148,11 @@ resource "aws_ecs_task_definition" "backend" {
 }
 
 resource "aws_ecs_service" "frontend" {
-  name            = "${var.name}-frontend"
-  cluster         = aws_ecs_cluster.this.id
-  task_definition = aws_ecs_task_definition.frontend.arn
-  desired_count   = var.desired_count
-  launch_type     = "FARGATE"
+  name                               = "${var.name}-frontend"
+  cluster                            = aws_ecs_cluster.this.id
+  task_definition                    = aws_ecs_task_definition.frontend.arn
+  desired_count                      = var.desired_count
+  launch_type                        = "FARGATE"
   deployment_maximum_percent         = 200
   deployment_minimum_healthy_percent = 0
 
@@ -182,11 +182,11 @@ resource "aws_ecs_service" "frontend" {
 }
 
 resource "aws_ecs_service" "backend" {
-  name            = "${var.name}-backend"
-  cluster         = aws_ecs_cluster.this.id
-  task_definition = aws_ecs_task_definition.backend.arn
-  desired_count   = var.desired_count
-  launch_type     = "FARGATE"
+  name                               = "${var.name}-backend"
+  cluster                            = aws_ecs_cluster.this.id
+  task_definition                    = aws_ecs_task_definition.backend.arn
+  desired_count                      = var.desired_count
+  launch_type                        = "FARGATE"
   deployment_maximum_percent         = 200
   deployment_minimum_healthy_percent = 0
 

@@ -64,6 +64,12 @@ salesforce_secrets_ready = true
 
 The first infrastructure apply can use `salesforce_secrets_ready = false` to create the platform without injecting empty secret values. Apply again with `true` after populating the secrets.
 
+Use the Salesforce org's My Domain for `salesforce_login_url` rather than the generic `https://login.salesforce.com` when the connected app is configured for that domain. For this demo, the value is recorded in `terraform.tfvars.example` as:
+
+```hcl
+salesforce_login_url = "https://orgfarm-d483781df2-dev-ed.develop.my.salesforce.com"
+```
+
 The placeholder ECS containers run BusyBox HTTP servers only so that the initial ALB and ECS health checks can become healthy. The first GitHub Actions deployment replaces them with the real Next.js and NestJS images.
 
 ## GitHub Role Permissions

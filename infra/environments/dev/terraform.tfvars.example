@@ -2,6 +2,7 @@ aws_region       = "us-east-1"
 project_name     = "salesforce-manager"
 environment      = "dev"
 availability_zones = ["us-east-1a", "us-east-1b"]
+salesforce_login_url = "https://orgfarm-d483781df2-dev-ed.develop.my.salesforce.com"
 
 # Set these after creating the empty Secrets Manager containers.
 salesforce_client_id_secret_arn     = "arn:aws:secretsmanager:us-east-1:ACCOUNT_ID:secret:salesforce-manager/dev/sf-client-id-REPLACE"
