@@ -135,11 +135,11 @@ jobs:
           frontend_task_definition="${{ steps.frontend-task.outputs.task-definition }}"
           backend_task_definition="${{ steps.backend-task.outputs.task-definition }}"
 
-          jq '(.containerDefinitions[] | select(.name == "frontend")) |= del(.entryPoint, .command)' \
+          jq '(.containerDefinitions[] | select(.name == "frontend")) |= del(.entryPoint, .command, .healthCheck)' \
             "$frontend_task_definition" > /tmp/frontend-task-definition-production.json
           mv /tmp/frontend-task-definition-production.json "$frontend_task_definition"
 
-          jq '(.containerDefinitions[] | select(.name == "backend")) |= del(.entryPoint, .command)' \
+          jq '(.containerDefinitions[] | select(.name == "backend")) |= del(.entryPoint, .command, .healthCheck)' \
             "$backend_task_definition" > /tmp/backend-task-definition-production.json
           mv /tmp/backend-task-definition-production.json "$backend_task_definition"
 
