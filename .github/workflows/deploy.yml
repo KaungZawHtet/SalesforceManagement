@@ -1,0 +1,158 @@
+name: Deploy to AWS
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: deploy-dev
+  cancel-in-progress: false
+
+env:
+  AWS_REGION: ${{ vars.AWS_REGION }}
+  AWS_ACCOUNT_ID: ${{ vars.AWS_ACCOUNT_ID }}
+  ECR_FRONTEND_REPOSITORY: ${{ vars.ECR_FRONTEND_REPOSITORY }}
+  ECR_BACKEND_REPOSITORY: ${{ vars.ECR_BACKEND_REPOSITORY }}
+  ECS_CLUSTER: ${{ vars.ECS_CLUSTER }}
+  ECS_FRONTEND_SERVICE: ${{ vars.ECS_FRONTEND_SERVICE }}
+  ECS_BACKEND_SERVICE: ${{ vars.ECS_BACKEND_SERVICE }}
+  ECS_FRONTEND_CONTAINER: ${{ vars.ECS_FRONTEND_CONTAINER || 'frontend' }}
+  ECS_BACKEND_CONTAINER: ${{ vars.ECS_BACKEND_CONTAINER || 'backend' }}
+  ALB_URL: ${{ vars.ALB_URL }}
+
+jobs:
+  deploy:
+    name: Build and deploy containers
+    if: ${{ vars.DEPLOY_ENABLED == 'true' }}
+    runs-on: ubuntu-latest
+    environment: dev
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Validate deployment configuration
+        env:
+          AWS_REGION: ${{ env.AWS_REGION }}
+          AWS_ACCOUNT_ID: ${{ env.AWS_ACCOUNT_ID }}
+          ECR_FRONTEND_REPOSITORY: ${{ env.ECR_FRONTEND_REPOSITORY }}
+          ECR_BACKEND_REPOSITORY: ${{ env.ECR_BACKEND_REPOSITORY }}
+          ECS_CLUSTER: ${{ env.ECS_CLUSTER }}
+          ECS_FRONTEND_SERVICE: ${{ env.ECS_FRONTEND_SERVICE }}
+          ECS_BACKEND_SERVICE: ${{ env.ECS_BACKEND_SERVICE }}
+          ALB_URL: ${{ env.ALB_URL }}
+        run: |
+          set -euo pipefail
+          for variable in AWS_REGION AWS_ACCOUNT_ID ECR_FRONTEND_REPOSITORY ECR_BACKEND_REPOSITORY ECS_CLUSTER ECS_FRONTEND_SERVICE ECS_BACKEND_SERVICE ALB_URL; do
+            if [ -z "${!variable}" ]; then
+              echo "Missing GitHub repository variable: ${variable}" >&2
+              exit 1
+            fi
+          done
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-region: ${{ env.AWS_REGION }}
+          role-to-assume: arn:aws:iam::${{ env.AWS_ACCOUNT_ID }}:role/salesforce-manager-github-actions
+          role-session-name: github-actions-${{ github.run_id }}
+
+      - name: Log in to Amazon ECR
+        id: ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Set image variables
+        id: image
+        env:
+          REGISTRY: ${{ steps.ecr.outputs.registry }}
+        run: |
+          echo "frontend=${REGISTRY}/${ECR_FRONTEND_REPOSITORY}:${GITHUB_SHA}" >> "$GITHUB_OUTPUT"
+          echo "backend=${REGISTRY}/${ECR_BACKEND_REPOSITORY}:${GITHUB_SHA}" >> "$GITHUB_OUTPUT"
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build and push backend image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: backend/Dockerfile
+          push: true
+          tags: ${{ steps.image.outputs.backend }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Build and push frontend image
+        uses: docker/build-push-action@v6
+        with:
+          context: frontend
+          file: frontend/Dockerfile
+          push: true
+          build-args: |
+            NEXT_PUBLIC_API_URL=${{ env.ALB_URL }}
+          tags: ${{ steps.image.outputs.frontend }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Download current ECS task definitions
+        run: |
+          aws ecs describe-task-definition \
+            --task-definition "$ECS_FRONTEND_SERVICE" \
+            --query taskDefinition \
+            --output json > /tmp/frontend-task-definition.json
+          aws ecs describe-task-definition \
+            --task-definition "$ECS_BACKEND_SERVICE" \
+            --query taskDefinition \
+            --output json > /tmp/backend-task-definition.json
+
+      - name: Render frontend task definition
+        id: frontend-task
+        uses: aws-actions/amazon-ecs-render-task-definition@v1
+        with:
+          task-definition: /tmp/frontend-task-definition.json
+          container-name: ${{ env.ECS_FRONTEND_CONTAINER }}
+          image: ${{ steps.image.outputs.frontend }}
+
+      - name: Render backend task definition
+        id: backend-task
+        uses: aws-actions/amazon-ecs-render-task-definition@v1
+        with:
+          task-definition: /tmp/backend-task-definition.json
+          container-name: ${{ env.ECS_BACKEND_CONTAINER }}
+          image: ${{ steps.image.outputs.backend }}
+
+      - name: Deploy frontend service
+        uses: aws-actions/amazon-ecs-deploy-task-definition@v2
+        with:
+          task-definition: ${{ steps.frontend-task.outputs.task-definition }}
+          service: ${{ env.ECS_FRONTEND_SERVICE }}
+          cluster: ${{ env.ECS_CLUSTER }}
+          wait-for-service-stability: true
+
+      - name: Deploy backend service
+        uses: aws-actions/amazon-ecs-deploy-task-definition@v2
+        with:
+          task-definition: ${{ steps.backend-task.outputs.task-definition }}
+          service: ${{ env.ECS_BACKEND_SERVICE }}
+          cluster: ${{ env.ECS_CLUSTER }}
+          wait-for-service-stability: true
+
+      - name: Run smoke tests
+        run: |
+          set -euo pipefail
+          curl --fail --show-error --silent --retry 10 --retry-delay 5 "$ALB_URL/api/health"
+          curl --fail --show-error --silent --retry 10 --retry-delay 5 "$ALB_URL/" > /dev/null
+
+  deployment-disabled:
+    name: Deployment not enabled
+    if: ${{ vars.DEPLOY_ENABLED != 'true' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Explain deployment gate
+        run: |
+          echo "Deployment is disabled. Set the repository variable DEPLOY_ENABLED to true after ECS and ECR are provisioned."
