@@ -46,11 +46,11 @@ The backend CORS configuration must allow the same value. Salesforce credentials
 
 Deployments run on pushes to `main` and can also be started manually with `workflow_dispatch`.
 
-The workflow tags images with the Git commit SHA, making deployments traceable and rollback-friendly:
+The workflow tags images with the Git commit SHA and GitHub run ID, making deployments traceable, retry-safe with immutable ECR tags, and rollback-friendly:
 
 ```text
-<ECR registry>/salesforce-manager-frontend:<commit-sha>
-<ECR registry>/salesforce-manager-backend:<commit-sha>
+<ECR registry>/salesforce-manager-frontend:<commit-sha>-<run-id>
+<ECR registry>/salesforce-manager-backend:<commit-sha>-<run-id>
 ```
 
 ## Terraform Workflow
