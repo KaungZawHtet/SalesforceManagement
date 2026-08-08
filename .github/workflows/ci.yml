@@ -74,8 +74,12 @@ jobs:
       - name: Install Playwright browser
         run: npx playwright install --with-deps chromium
 
+      - name: Install backend dependencies for E2E
+        working-directory: ${{ github.workspace }}/backend
+        run: npm ci
+
       - name: Start backend for E2E tests
-        working-directory: .
+        working-directory: ${{ github.workspace }}
         env:
           PORT: 3000
           CORS_ORIGIN: http://127.0.0.1:3001
