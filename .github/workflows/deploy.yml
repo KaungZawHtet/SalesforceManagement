@@ -130,6 +130,19 @@ jobs:
           container-name: ${{ env.ECS_BACKEND_CONTAINER }}
           image: ${{ steps.image.outputs.backend }}
 
+      - name: Remove bootstrap container commands
+        run: |
+          frontend_task_definition="${{ steps.frontend-task.outputs.task-definition }}"
+          backend_task_definition="${{ steps.backend-task.outputs.task-definition }}"
+
+          jq '(.containerDefinitions[] | select(.name == "frontend")) |= del(.entryPoint, .command)' \
+            "$frontend_task_definition" > /tmp/frontend-task-definition-production.json
+          mv /tmp/frontend-task-definition-production.json "$frontend_task_definition"
+
+          jq '(.containerDefinitions[] | select(.name == "backend")) |= del(.entryPoint, .command)' \
+            "$backend_task_definition" > /tmp/backend-task-definition-production.json
+          mv /tmp/backend-task-definition-production.json "$backend_task_definition"
+
       - name: Deploy frontend service
         uses: aws-actions/amazon-ecs-deploy-task-definition@v2
         with:
