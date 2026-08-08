@@ -11,11 +11,12 @@ resource "aws_lb" "this" {
 }
 
 resource "aws_lb_target_group" "frontend" {
-  name        = substr("${var.name}-fe", 0, 32)
-  port        = var.frontend_port
-  protocol    = "HTTP"
-  target_type = "ip"
-  vpc_id      = var.vpc_id
+  name                 = substr("${var.name}-fe", 0, 32)
+  port                 = var.frontend_port
+  protocol             = "HTTP"
+  target_type          = "ip"
+  vpc_id               = var.vpc_id
+  deregistration_delay = 30
 
   health_check {
     enabled             = true
@@ -33,11 +34,12 @@ resource "aws_lb_target_group" "frontend" {
 }
 
 resource "aws_lb_target_group" "backend" {
-  name        = substr("${var.name}-be", 0, 32)
-  port        = var.backend_port
-  protocol    = "HTTP"
-  target_type = "ip"
-  vpc_id      = var.vpc_id
+  name                 = substr("${var.name}-be", 0, 32)
+  port                 = var.backend_port
+  protocol             = "HTTP"
+  target_type          = "ip"
+  vpc_id               = var.vpc_id
+  deregistration_delay = 30
 
   health_check {
     enabled             = true
