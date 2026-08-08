@@ -1,38 +1,38 @@
-import ***REMOVED*** Injectable ***REMOVED*** from '@nestjs/common';
-import ***REMOVED*** SalesforceTokenResponse ***REMOVED*** from './types/salesforce.interfaces';
+import { Injectable } from '@nestjs/common';
+import type { SalesforceTokenResponse } from './types/salesforce.interfaces';
 
 export const TOKEN_EXPIRY_MARGIN_MS = 60_000;
 
-export interface CachedToken ***REMOVED***
+export interface CachedToken {
   accessToken: string;
   instanceUrl: string;
   expiresAt: number;
-***REMOVED***
+}
 
 @Injectable()
-export class TokenCache ***REMOVED***
+export class TokenCache {
   private cache: CachedToken | null = null;
 
-  getValid(): CachedToken | null ***REMOVED***
-    if (!this.cache) ***REMOVED***
+  getValid(): CachedToken | null {
+    if (!this.cache) {
       return null;
-***REMOVED***
-    if (Date.now() >= this.cache.expiresAt - TOKEN_EXPIRY_MARGIN_MS) ***REMOVED***
+    }
+    if (Date.now() >= this.cache.expiresAt - TOKEN_EXPIRY_MARGIN_MS) {
       this.clear();
       return null;
-***REMOVED***
+    }
     return this.cache;
-  ***REMOVED***
+  }
 
-  set(token: SalesforceTokenResponse, expiresIn: number): void ***REMOVED***
-    this.cache = ***REMOVED***
+  set(token: SalesforceTokenResponse, expiresIn: number): void {
+    this.cache = {
       accessToken: token.access_token,
       instanceUrl: token.instance_url || '',
       expiresAt: Date.now() + expiresIn * 1000,
-***REMOVED***;
-  ***REMOVED***
+    };
+  }
 
-  clear(): void ***REMOVED***
+  clear(): void {
     this.cache = null;
-  ***REMOVED***
-***REMOVED***
+  }
+}

@@ -1,22 +1,24 @@
 'use client';
 
-import ***REMOVED*** Toaster as SonnerToaster ***REMOVED*** from 'sonner';
+import { Toaster as SonnerToaster } from 'sonner';
 
-export function Toaster() ***REMOVED***
+export function Toaster() {
   return (
     <SonnerToaster
       className="toaster data-[toast=true]:animate-in data-[toast=exit]:animate-out data-[toast=exit]:fade-out-0 data-[toast=enter]:fade-in-0"
-      toastOptions=***REMOVED******REMOVED***
-        classNames: ***REMOVED***
-          toast: 'bg-background text-foreground border-b border-input',
+      toastOptions={{
+        classNames: {
+          toast: 'group toast rounded-xl border border-border bg-card text-card-foreground shadow-lg',
           description: 'text-muted-foreground',
-          actionButton:
-            'bg-secondary text-secondary-foreground hover:bg-secondary/80',
+          success: 'border-emerald-200 bg-emerald-50 text-emerald-950',
+          error: 'border-destructive/20 bg-destructive/5 text-destructive',
+          actionButton: 'bg-primary text-primary-foreground hover:bg-primary/90',
+          cancelButton: 'bg-secondary text-secondary-foreground hover:bg-secondary/80',
           closeButton:
-            'rounded-md p-1 hover:bg-muted/50',
-          loader: 'bg-background',
-    ***REMOVED***
-  ***REMOVED******REMOVED***
+            'rounded-md p-1 text-muted-foreground hover:bg-muted hover:text-foreground',
+          loader: 'bg-primary',
+        },
+      }}
     />
   );
-***REMOVED***
+}

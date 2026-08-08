@@ -1,8 +1,8 @@
-const nextConfig = ***REMOVED***
+const nextConfig = {
   output: 'standalone',
-  turbopack: ***REMOVED***
+  turbopack: {
     root: process.cwd(),
-  ***REMOVED***,
-***REMOVED***;
+  },
+};
 
 export default nextConfig;

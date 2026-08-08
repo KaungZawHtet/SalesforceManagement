@@ -1,6 +1,6 @@
-import ***REMOVED*** clsx ***REMOVED*** from 'clsx';
-import ***REMOVED*** twMerge ***REMOVED*** from 'tailwind-merge';
+import { clsx } from 'clsx';
+import { twMerge } from 'tailwind-merge';
 
-export function cn(...inputs: Parameters<typeof clsx>[0][]): string ***REMOVED***
+export function cn(...inputs: Parameters<typeof clsx>[0][]): string {
   return twMerge(clsx(...inputs));
-***REMOVED***
+}

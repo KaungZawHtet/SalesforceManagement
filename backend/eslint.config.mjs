@@ -5,31 +5,31 @@ import globals from 'globals';
 import tseslint from 'typescript-eslint';
 
 export default tseslint.config(
-  ***REMOVED***
+  {
     ignores: ['eslint.config.mjs'],
-  ***REMOVED***,
+  },
   eslint.configs.recommended,
   ...tseslint.configs.recommendedTypeChecked,
   eslintPluginPrettierRecommended,
-  ***REMOVED***
-    languageOptions: ***REMOVED***
-      globals: ***REMOVED***
+  {
+    languageOptions: {
+      globals: {
         ...globals.node,
         ...globals.jest,
-  ***REMOVED***
+      },
       sourceType: 'commonjs',
-      parserOptions: ***REMOVED***
+      parserOptions: {
         projectService: true,
         tsconfigRootDir: import.meta.dirname,
-  ***REMOVED***
-***REMOVED***
-  ***REMOVED***,
-  ***REMOVED***
-    rules: ***REMOVED***
+      },
+    },
+  },
+  {
+    rules: {
       '@typescript-eslint/no-explicit-any': 'off',
       '@typescript-eslint/no-floating-promises': 'warn',
       '@typescript-eslint/no-unsafe-argument': 'warn',
-      "prettier/prettier": ["error", ***REMOVED*** endOfLine: "auto" ***REMOVED***],
-***REMOVED***
-  ***REMOVED***,
+      'prettier/prettier': ['error', { endOfLine: 'auto' }],
+    },
+  },
 );

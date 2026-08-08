@@ -1,11 +1,11 @@
-import ***REMOVED*** AccountsView ***REMOVED*** from '@/components/accounts/accounts-view';
-import ***REMOVED*** Toaster ***REMOVED*** from '@/components/ui/sonner';
+import { AccountsView } from '@/components/accounts/accounts-view';
+import { Toaster } from '@/components/ui/sonner';
 
-export default function HomePage() ***REMOVED***
+export default function HomePage() {
   return (
     <>
       <AccountsView />
       <Toaster />
     </>
   );
-***REMOVED***
+}

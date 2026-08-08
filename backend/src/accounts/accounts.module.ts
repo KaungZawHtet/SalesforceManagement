@@ -1,11 +1,11 @@
-import ***REMOVED*** Module ***REMOVED*** from '@nestjs/common';
-import ***REMOVED*** AccountsController ***REMOVED*** from './accounts.controller';
-import ***REMOVED*** AccountsService ***REMOVED*** from './accounts.service';
-import ***REMOVED*** SalesforceModule ***REMOVED*** from '../salesforce/salesforce.module';
+import { Module } from '@nestjs/common';
+import { AccountsController } from './accounts.controller';
+import { AccountsService } from './accounts.service';
+import { SalesforceModule } from '../salesforce/salesforce.module';
 
-@Module(***REMOVED***
+@Module({
   imports: [SalesforceModule],
   controllers: [AccountsController],
   providers: [AccountsService],
-***REMOVED***)
-export class AccountsModule ***REMOVED******REMOVED***
+})
+export class AccountsModule {}

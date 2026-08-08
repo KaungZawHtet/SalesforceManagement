@@ -1,22 +1,22 @@
-export interface Account ***REMOVED***
+export interface Account {
   id: string;
   name: string;
   phone?: string;
   website?: string;
   industry?: string;
-***REMOVED***
+}
 
-export interface AccountListMeta ***REMOVED***
+export interface AccountListMeta {
   total: number;
   limit: number;
   offset: number;
-***REMOVED***
+}
 
-export interface AccountListResponse ***REMOVED***
+export interface AccountListResponse {
   data: Account[];
   meta: AccountListMeta;
-***REMOVED***
+}
 
-export interface AccountCreateResponse ***REMOVED***
+export interface AccountCreateResponse {
   data: Account;
-***REMOVED***
+}

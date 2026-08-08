@@ -1,4 +1,4 @@
-export interface SalesforceTokenResponse ***REMOVED***
+export interface SalesforceTokenResponse {
   access_token: string;
   instance_url?: string;
   id?: string;
@@ -12,31 +12,31 @@ export interface SalesforceTokenResponse ***REMOVED***
   expires_in?: number | string;
   error?: string;
   error_description?: string;
-***REMOVED***
+}
 
-export interface SalesforceError ***REMOVED***
+export interface SalesforceError {
   errorCode?: string;
   message: string;
   fields?: string[];
   statusCode?: string;
-***REMOVED***
+}
 
-export interface SalesforceAccountRecord ***REMOVED***
+export interface SalesforceAccountRecord {
   Id: string;
   Name: string;
   Phone?: string | null;
   Website?: string | null;
   Industry?: string | null;
-***REMOVED***
+}
 
-export interface SalesforceQueryResponse<T> ***REMOVED***
+export interface SalesforceQueryResponse<T> {
   totalSize: number;
   done: boolean;
   records: T[];
-***REMOVED***
+}
 
-export interface SalesforceCreateResponse ***REMOVED***
+export interface SalesforceCreateResponse {
   id: string;
   success: boolean;
   errors: SalesforceError[];
-***REMOVED***
+}

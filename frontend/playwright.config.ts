@@ -1,34 +1,34 @@
-import ***REMOVED*** defineConfig, devices ***REMOVED*** from '@playwright/test';
+import { defineConfig, devices } from '@playwright/test';
 
 const port = process.env.PLAYWRIGHT_PORT ?? '3001';
-const baseURL = `http://127.0.0.1:$***REMOVED***port***REMOVED***`;
+const baseURL = `http://127.0.0.1:${port}`;
 
-export default defineConfig(***REMOVED***
+export default defineConfig({
   testDir: 'tests/e2e',
   testMatch: '*.spec.ts',
   timeout: 30000,
-  expect: ***REMOVED***
+  expect: {
     timeout: 5000,
-  ***REMOVED***,
+  },
   reporter: 'list',
-  use: ***REMOVED***
+  use: {
     baseURL,
     trace: 'on-first-retry',
     headless: true,
-    viewport: ***REMOVED*** width: 1280, height: 720 ***REMOVED***,
-  ***REMOVED***,
-  webServer: ***REMOVED***
-    command: `npm run dev -- --hostname 127.0.0.1 --port $***REMOVED***port***REMOVED***`,
+    viewport: { width: 1280, height: 720 },
+  },
+  webServer: {
+    command: `npm run dev -- --hostname 127.0.0.1 --port ${port}`,
     url: baseURL,
     reuseExistingServer: !process.env.CI,
-    env: ***REMOVED***
+    env: {
       NEXT_PUBLIC_API_URL: 'http://127.0.0.1:3000',
-***REMOVED***
-  ***REMOVED***,
+    },
+  },
   projects: [
-    ***REMOVED***
+    {
       name: 'e2e',
-      use: ***REMOVED*** ...devices['Desktop Chrome'] ***REMOVED***,
-***REMOVED***
-***REMOVED***,
-***REMOVED***);
+      use: { ...devices['Desktop Chrome'] },
+    },
+  ],
+});

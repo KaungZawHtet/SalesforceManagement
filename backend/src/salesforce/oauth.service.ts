@@ -1,39 +1,39 @@
-import ***REMOVED***
+import {
   BadGatewayException,
   Injectable,
   InternalServerErrorException,
   Logger,
-***REMOVED*** from '@nestjs/common';
-import ***REMOVED*** ConfigService ***REMOVED*** from '@nestjs/config';
-import ***REMOVED*** SalesforceConfig ***REMOVED*** from '../config/configuration';
-import ***REMOVED*** TokenCache, CachedToken ***REMOVED*** from './token-cache';
-import ***REMOVED*** SalesforceTokenResponse ***REMOVED*** from './types/salesforce.interfaces';
-import ***REMOVED*** translateAuthError ***REMOVED*** from './salesforce.errors';
+} from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
+import type { SalesforceConfig } from '../config/configuration';
+import { TokenCache, type CachedToken } from './token-cache';
+import type { SalesforceTokenResponse } from './types/salesforce.interfaces';
+import { translateAuthError } from './salesforce.errors';
 
 const DEFAULT_EXPIRES_IN = 3600;
 
 @Injectable()
-export class OauthService ***REMOVED***
+export class OauthService {
   private readonly logger = new Logger(OauthService.name);
 
   constructor(
     private readonly configService: ConfigService,
     private readonly tokenCache: TokenCache,
-  ) ***REMOVED******REMOVED***
+  ) {}
 
-  async authenticate(): Promise<CachedToken> ***REMOVED***
+  async authenticate(): Promise<CachedToken> {
     const existing = this.tokenCache.getValid();
-    if (existing) ***REMOVED***
+    if (existing) {
       return existing;
-***REMOVED***
+    }
     return this.obtainToken();
-  ***REMOVED***
+  }
 
-  invalidate(): void ***REMOVED***
+  invalidate(): void {
     this.tokenCache.clear();
-  ***REMOVED***
+  }
 
-  private async obtainToken(): Promise<CachedToken> ***REMOVED***
+  private async obtainToken(): Promise<CachedToken> {
     const config = this.getSalesforceConfig();
 
     const body = new URLSearchParams();
@@ -41,75 +41,75 @@ export class OauthService ***REMOVED***
     body.append('client_id', config.clientId);
     body.append('client_secret', config.clientSecret);
 
-    const url = `$***REMOVED***config.loginUrl***REMOVED***/services/oauth2/token`;
+    const url = `${config.loginUrl}/services/oauth2/token`;
     this.logger.log('Requesting a new Salesforce access token');
 
     let response: Response;
-    try ***REMOVED***
-      response = await fetch(url, ***REMOVED***
+    try {
+      response = await fetch(url, {
         method: 'POST',
-        headers: ***REMOVED*** 'Content-Type': 'application/x-www-form-urlencoded' ***REMOVED***,
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
         body,
-  ***REMOVED***);
-***REMOVED*** catch ***REMOVED***
+      });
+    } catch {
       this.logger.error(
         'Network error while contacting the Salesforce auth service',
       );
       throw new BadGatewayException(
         'Unable to reach the Salesforce authentication service.',
       );
-***REMOVED***
+    }
 
     let payload: SalesforceTokenResponse;
-    try ***REMOVED***
+    try {
       payload = (await response.json()) as SalesforceTokenResponse;
-***REMOVED*** catch ***REMOVED***
-      payload = ***REMOVED******REMOVED*** as SalesforceTokenResponse;
-***REMOVED***
+    } catch {
+      payload = {} as SalesforceTokenResponse;
+    }
 
-    if (!response.ok) ***REMOVED***
+    if (!response.ok) {
       throw translateAuthError(response, payload);
-***REMOVED***
+    }
 
     if (
       typeof payload.access_token !== 'string' ||
       payload.access_token.trim() === '' ||
       typeof payload.instance_url !== 'string' ||
       payload.instance_url.trim() === ''
-    ) ***REMOVED***
+    ) {
       throw new BadGatewayException(
         'Salesforce authentication returned an invalid token response.',
       );
-***REMOVED***
+    }
 
     const expiresIn = this.parseExpiresIn(payload);
     this.tokenCache.set(payload, expiresIn);
 
     const cached = this.tokenCache.getValid();
-    if (!cached) ***REMOVED***
+    if (!cached) {
       throw new InternalServerErrorException(
         'Failed to cache the Salesforce access token.',
       );
-***REMOVED***
+    }
     return cached;
-  ***REMOVED***
+  }
 
-  private parseExpiresIn(response: SalesforceTokenResponse): number ***REMOVED***
+  private parseExpiresIn(response: SalesforceTokenResponse): number {
     const raw = response.expires_in;
-    if (raw === undefined || raw === null) ***REMOVED***
+    if (raw === undefined || raw === null) {
       return DEFAULT_EXPIRES_IN;
-***REMOVED***
+    }
     const parsed = typeof raw === 'string' ? Number(raw) : raw;
     return Number.isFinite(parsed) ? parsed : DEFAULT_EXPIRES_IN;
-  ***REMOVED***
+  }
 
-  private getSalesforceConfig(): SalesforceConfig ***REMOVED***
+  private getSalesforceConfig(): SalesforceConfig {
     const config = this.configService.get<SalesforceConfig>('salesforce');
-    if (!config) ***REMOVED***
+    if (!config) {
       throw new InternalServerErrorException(
         'Salesforce configuration is not available.',
       );
-***REMOVED***
+    }
     return config;
-  ***REMOVED***
-***REMOVED***
+  }
+}

@@ -1,22 +1,22 @@
-import ***REMOVED*** Module ***REMOVED*** from '@nestjs/common';
-import ***REMOVED*** ConfigModule ***REMOVED*** from '@nestjs/config';
-import configuration, ***REMOVED*** validateEnv ***REMOVED*** from './config/configuration';
-import ***REMOVED*** AccountsModule ***REMOVED*** from './accounts/accounts.module';
-import ***REMOVED*** AuthModule ***REMOVED*** from './auth/auth.module';
-import ***REMOVED*** HealthController ***REMOVED*** from './common/health/health.controller';
-import ***REMOVED*** SalesforceModule ***REMOVED*** from './salesforce/salesforce.module';
+import { Module } from '@nestjs/common';
+import { ConfigModule } from '@nestjs/config';
+import configuration, { validateEnv } from './config/configuration';
+import { AccountsModule } from './accounts/accounts.module';
+import { AuthModule } from './auth/auth.module';
+import { HealthController } from './common/health/health.controller';
+import { SalesforceModule } from './salesforce/salesforce.module';
 
-@Module(***REMOVED***
+@Module({
   imports: [
-    ConfigModule.forRoot(***REMOVED***
+    ConfigModule.forRoot({
       isGlobal: true,
       load: [configuration],
       validate: validateEnv,
-***REMOVED***),
+    }),
     SalesforceModule,
     AccountsModule,
     AuthModule,
-***REMOVED***,
+  ],
   controllers: [HealthController],
-***REMOVED***)
-export class AppModule ***REMOVED******REMOVED***
+})
+export class AppModule {}

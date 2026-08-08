@@ -1,172 +1,172 @@
-import ***REMOVED*** Test ***REMOVED*** from '@nestjs/testing';
-import ***REMOVED*** ValidationPipe, type INestApplication ***REMOVED*** from '@nestjs/common';
-import ***REMOVED*** Server ***REMOVED*** from 'net';
+import { Test } from '@nestjs/testing';
+import { ValidationPipe, type INestApplication } from '@nestjs/common';
+import type { Server } from 'net';
 import request from 'supertest';
-import ***REMOVED*** AccountsController ***REMOVED*** from './accounts.controller';
-import ***REMOVED*** AccountsService ***REMOVED*** from './accounts.service';
-import ***REMOVED*** SalesforceService ***REMOVED*** from '../salesforce/salesforce.service';
-import ***REMOVED*** HttpExceptionFilter ***REMOVED*** from '../common/filters/http-exception.filter';
-import type ***REMOVED*** Account, AccountListResponse ***REMOVED*** from './types/account';
-import type ***REMOVED*** CreateAccountDto ***REMOVED*** from './dto/create-account.dto';
+import { AccountsController } from './accounts.controller';
+import { AccountsService } from './accounts.service';
+import { SalesforceService } from '../salesforce/salesforce.service';
+import { HttpExceptionFilter } from '../common/filters/http-exception.filter';
+import type { Account, AccountListResponse } from './types/account';
+import type { CreateAccountDto } from './dto/create-account.dto';
 
-interface MockedSalesforceService ***REMOVED***
+interface MockedSalesforceService {
   listAccounts: jest.MockedFunction<
     (limit?: number) => Promise<AccountListResponse>
   >;
   createAccount: jest.MockedFunction<
     (input: CreateAccountDto) => Promise<Account>
   >;
-***REMOVED***
+}
 
-interface ErrorResponse ***REMOVED***
+interface ErrorResponse {
   statusCode: number;
   message: string;
   errors?: string[];
-***REMOVED***
+}
 
-describe('AccountsController', () => ***REMOVED***
+describe('AccountsController', () => {
   let app: INestApplication;
   let httpServer: Server;
   let salesforceService: MockedSalesforceService;
 
-  beforeEach(async () => ***REMOVED***
-    salesforceService = ***REMOVED***
+  beforeEach(async () => {
+    salesforceService = {
       listAccounts: jest.fn(),
       createAccount: jest.fn(),
-***REMOVED***;
+    };
 
-    const moduleRef = await Test.createTestingModule(***REMOVED***
+    const moduleRef = await Test.createTestingModule({
       controllers: [AccountsController],
       providers: [
         AccountsService,
-        ***REMOVED*** provide: SalesforceService, useValue: salesforceService ***REMOVED***,
-    ***REMOVED***,
-***REMOVED***).compile();
+        { provide: SalesforceService, useValue: salesforceService },
+      ],
+    }).compile();
 
     app = moduleRef.createNestApplication();
     app.useGlobalPipes(
-      new ValidationPipe(***REMOVED***
+      new ValidationPipe({
         whitelist: true,
         forbidNonWhitelisted: true,
         transform: true,
-        transformOptions: ***REMOVED*** enableImplicitConversion: false ***REMOVED***,
-  ***REMOVED***),
+        transformOptions: { enableImplicitConversion: false },
+      }),
     );
     app.useGlobalFilters(new HttpExceptionFilter());
     await app.init();
     httpServer = app.getHttpServer() as Server;
-  ***REMOVED***);
+  });
 
-  afterEach(async () => ***REMOVED***
+  afterEach(async () => {
     await app.close();
-  ***REMOVED***);
+  });
 
-  it('GET /api/accounts returns 200 with data and meta', async () => ***REMOVED***
-    salesforceService.listAccounts.mockResolvedValue(***REMOVED***
-      data: [***REMOVED*** id: '1', name: 'Acme' ***REMOVED***],
-      meta: ***REMOVED*** total: 1, limit: 100, offset: 0 ***REMOVED***,
-***REMOVED***);
+  it('GET /api/accounts returns 200 with data and meta', async () => {
+    salesforceService.listAccounts.mockResolvedValue({
+      data: [{ id: '1', name: 'Acme' }],
+      meta: { total: 1, limit: 100, offset: 0 },
+    });
 
     const res = await request(httpServer).get('/api/accounts?limit=50');
     const body = res.body as AccountListResponse;
 
     expect(res.status).toBe(200);
-    expect(body).toEqual(***REMOVED***
-      data: [***REMOVED*** id: '1', name: 'Acme' ***REMOVED***],
-      meta: ***REMOVED*** total: 1, limit: 100, offset: 0 ***REMOVED***,
-***REMOVED***);
+    expect(body).toEqual({
+      data: [{ id: '1', name: 'Acme' }],
+      meta: { total: 1, limit: 100, offset: 0 },
+    });
     expect(salesforceService.listAccounts).toHaveBeenCalledWith(50);
-  ***REMOVED***);
+  });
 
-  it('GET /api/accounts without a limit delegates undefined', async () => ***REMOVED***
-    salesforceService.listAccounts.mockResolvedValue(***REMOVED***
+  it('GET /api/accounts without a limit delegates undefined', async () => {
+    salesforceService.listAccounts.mockResolvedValue({
       data: [],
-      meta: ***REMOVED*** total: 0, limit: 100, offset: 0 ***REMOVED***,
-***REMOVED***);
+      meta: { total: 0, limit: 100, offset: 0 },
+    });
 
     const res = await request(httpServer).get('/api/accounts');
     const body = res.body as AccountListResponse;
 
     expect(res.status).toBe(200);
-    expect(body).toEqual(***REMOVED***
+    expect(body).toEqual({
       data: [],
-      meta: ***REMOVED*** total: 0, limit: 100, offset: 0 ***REMOVED***,
-***REMOVED***);
+      meta: { total: 0, limit: 100, offset: 0 },
+    });
     expect(salesforceService.listAccounts).toHaveBeenCalledWith(undefined);
-  ***REMOVED***);
+  });
 
-  it('POST /api/accounts returns 201 with the created account', async () => ***REMOVED***
-    salesforceService.createAccount.mockResolvedValue(***REMOVED***
+  it('POST /api/accounts returns 201 with the created account', async () => {
+    salesforceService.createAccount.mockResolvedValue({
       id: '001',
       name: 'Acme',
       phone: '123',
-***REMOVED***);
+    });
 
-    const res = await request(httpServer).post('/api/accounts').send(***REMOVED***
+    const res = await request(httpServer).post('/api/accounts').send({
       name: 'Acme',
       phone: '123',
       website: 'https://acme.com',
       industry: 'Tech',
-***REMOVED***);
-    const body = res.body as ***REMOVED*** data: Account ***REMOVED***;
+    });
+    const body = res.body as { data: Account };
 
     expect(res.status).toBe(201);
-    expect(body).toMatchObject(***REMOVED*** data: ***REMOVED*** id: '001' ***REMOVED*** ***REMOVED***);
-    expect(salesforceService.createAccount.mock.calls[0][0]).toEqual(***REMOVED***
+    expect(body).toMatchObject({ data: { id: '001' } });
+    expect(salesforceService.createAccount.mock.calls[0][0]).toEqual({
       name: 'Acme',
       phone: '123',
       website: 'https://acme.com',
       industry: 'Tech',
-***REMOVED***);
-  ***REMOVED***);
+    });
+  });
 
-  it('rejects unknown properties with a 400 and an errors list', async () => ***REMOVED***
+  it('rejects unknown properties with a 400 and an errors list', async () => {
     const res = await request(httpServer)
       .post('/api/accounts')
-      .send(***REMOVED*** name: 'Acme', evil: 'x' ***REMOVED***);
+      .send({ name: 'Acme', evil: 'x' });
     const body = res.body as ErrorResponse;
 
     expect(res.status).toBe(400);
     expect(body.message).toBe('Bad request');
     expect(body.errors).toBeDefined();
     expect(Array.isArray(body.errors)).toBe(true);
-  ***REMOVED***);
+  });
 
-  it('requires an account name (400)', async () => ***REMOVED***
+  it('requires an account name (400)', async () => {
     const res = await request(httpServer)
       .post('/api/accounts')
-      .send(***REMOVED*** phone: '123' ***REMOVED***);
+      .send({ phone: '123' });
     const body = res.body as ErrorResponse;
 
     expect(res.status).toBe(400);
     expect(body.errors).toBeDefined();
-  ***REMOVED***);
+  });
 
-  it('trims the name before delegating', async () => ***REMOVED***
-    salesforceService.createAccount.mockResolvedValue(***REMOVED***
+  it('trims the name before delegating', async () => {
+    salesforceService.createAccount.mockResolvedValue({
       id: '001',
       name: 'Acme',
-***REMOVED***);
+    });
 
     await request(httpServer)
       .post('/api/accounts')
-      .send(***REMOVED*** name: '   Acme   ' ***REMOVED***);
+      .send({ name: '   Acme   ' });
 
     expect(salesforceService.createAccount.mock.calls[0][0].name).toBe('Acme');
-  ***REMOVED***);
+  });
 
-  it('exposes the created record id for future lookups', async () => ***REMOVED***
-    salesforceService.createAccount.mockResolvedValue(***REMOVED***
+  it('exposes the created record id for future lookups', async () => {
+    salesforceService.createAccount.mockResolvedValue({
       id: '001new',
       name: 'Acme',
-***REMOVED***);
+    });
 
     const res = await request(httpServer)
       .post('/api/accounts')
-      .send(***REMOVED*** name: 'Acme' ***REMOVED***);
-    const body = res.body as ***REMOVED*** data: Account ***REMOVED***;
+      .send({ name: 'Acme' });
+    const body = res.body as { data: Account };
 
     expect(res.status).toBe(201);
     expect(body.data.id).toBe('001new');
-  ***REMOVED***);
-***REMOVED***);
+  });
+});

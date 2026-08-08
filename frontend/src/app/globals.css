@@ -1,8 +1,12 @@
 @import 'tailwindcss';
 
-@theme inline ***REMOVED***
+@theme inline {
   --color-background: hsl(var(--background));
   --color-foreground: hsl(var(--foreground));
+  --color-card: hsl(var(--card));
+  --color-card-foreground: hsl(var(--card-foreground));
+  --color-popover: hsl(var(--popover));
+  --color-popover-foreground: hsl(var(--popover-foreground));
   --color-primary: hsl(var(--primary));
   --color-primary-foreground: hsl(var(--primary-foreground));
   --color-secondary: hsl(var(--secondary));
@@ -20,48 +24,37 @@
   --font-geist-mono: var(--font-geist-mono);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
-***REMOVED***
+}
 
-:root ***REMOVED***
-  --background: 210 100% 98%;
-  --foreground: 210 10% 20%;
-  --primary: 220 70% 55%;
+:root {
+  --background: 40 33% 98%;
+  --foreground: 222 47% 11%;
+  --card: 0 0% 100%;
+  --card-foreground: 222 47% 11%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 222 47% 11%;
+  --primary: 229 74% 52%;
   --primary-foreground: 0 0% 100%;
-  --secondary: 210 10% 96%;
-  --secondary-foreground: 210 10% 18%;
-  --muted: 210 10% 96%;
-  --muted-foreground: 210 5% 40%;
-  --accent: 210 10% 94%;
-  --accent-foreground: 210 10% 18%;
-  --destructive: 0 80% 55%;
+  --secondary: 220 20% 96%;
+  --secondary-foreground: 222 47% 17%;
+  --muted: 220 20% 96%;
+  --muted-foreground: 215 16% 47%;
+  --accent: 226 100% 97%;
+  --accent-foreground: 229 74% 38%;
+  --destructive: 0 72% 51%;
   --destructive-foreground: 0 0% 100%;
-  --border: 210 20% 90%;
-  --input: 210 20% 90%;
-  --ring: 220 70% 55%;
-***REMOVED***
+  --border: 214 32% 91%;
+  --input: 214 32% 88%;
+  --ring: 229 74% 52%;
+}
 
-@media (prefers-color-scheme: dark) ***REMOVED***
-  :root ***REMOVED***
-    --background: 210 10% 10%;
-    --foreground: 0 0% 93%;
-    --primary: 220 70% 60%;
-    --primary-foreground: 0 0% 100%;
-    --secondary: 210 10% 15%;
-    --secondary-foreground: 0 0% 93%;
-    --muted: 210 10% 15%;
-    --muted-foreground: 210 5% 60%;
-    --accent: 210 10% 18%;
-    --accent-foreground: 0 0% 93%;
-    --destructive: 0 65% 45%;
-    --destructive-foreground: 0 0% 93%;
-    --border: 210 10% 20%;
-    --input: 210 10% 22%;
-    --ring: 220 70% 60%;
-  ***REMOVED***
-***REMOVED***
+* {
+  border-color: hsl(var(--border));
+}
 
-body ***REMOVED***
+body {
+  min-height: 100vh;
   background: hsl(var(--background));
   color: hsl(var(--foreground));
   font-family: var(--font-sans);
-***REMOVED***
+}

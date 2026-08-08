@@ -1,17 +1,17 @@
-import ***REMOVED*** forwardRef ***REMOVED*** from 'react';
-import ***REMOVED*** cn ***REMOVED*** from '@/lib/utils';
+import { forwardRef } from 'react';
+import { cn } from '@/lib/utils';
 
 export const Label = forwardRef<
   HTMLLabelElement,
   React.LabelHTMLAttributes<HTMLLabelElement>
->((***REMOVED*** className, ...props ***REMOVED***, ref) => (
+>(({ className, ...props }, ref) => (
   <label
-    className=***REMOVED***cn(
+    className={cn(
       'text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-75',
-      className
-    )***REMOVED***
-    ref=***REMOVED***ref***REMOVED***
-    ***REMOVED***...props***REMOVED***
+      className,
+    )}
+    ref={ref}
+    {...props}
   />
 ));
 Label.displayName = 'Label';

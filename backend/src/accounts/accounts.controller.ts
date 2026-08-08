@@ -1,36 +1,36 @@
-import ***REMOVED*** Body, Controller, Get, HttpCode, Post, Query ***REMOVED*** from '@nestjs/common';
-import ***REMOVED*** AccountsService ***REMOVED*** from './accounts.service';
-import ***REMOVED*** CreateAccountDto ***REMOVED*** from './dto/create-account.dto';
-import type ***REMOVED***
+import { Body, Controller, Get, HttpCode, Post, Query } from '@nestjs/common';
+import { AccountsService } from './accounts.service';
+import { CreateAccountDto } from './dto/create-account.dto';
+import type {
   AccountCreateResponse,
   AccountListResponse,
-***REMOVED*** from './types/account';
+} from './types/account';
 
 @Controller('api/accounts')
-export class AccountsController ***REMOVED***
-  constructor(private readonly accountsService: AccountsService) ***REMOVED******REMOVED***
+export class AccountsController {
+  constructor(private readonly accountsService: AccountsService) {}
 
   @Get()
   @HttpCode(200)
   async listAccounts(
     @Query('limit') limit?: string,
-  ): Promise<AccountListResponse> ***REMOVED***
+  ): Promise<AccountListResponse> {
     return this.accountsService.listAccounts(this.parseLimit(limit));
-  ***REMOVED***
+  }
 
   @Post()
   @HttpCode(201)
   async createAccount(
     @Body() dto: CreateAccountDto,
-  ): Promise<AccountCreateResponse> ***REMOVED***
+  ): Promise<AccountCreateResponse> {
     return this.accountsService.createAccount(dto);
-  ***REMOVED***
+  }
 
-  private parseLimit(limit?: string): number | undefined ***REMOVED***
-    if (!limit) ***REMOVED***
+  private parseLimit(limit?: string): number | undefined {
+    if (!limit) {
       return undefined;
-***REMOVED***
+    }
     const parsed = Number(limit);
     return Number.isNaN(parsed) ? undefined : parsed;
-  ***REMOVED***
-***REMOVED***
+  }
+}

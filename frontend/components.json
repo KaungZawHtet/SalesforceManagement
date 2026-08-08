@@ -1,8 +1,8 @@
-***REMOVED***
+{
   "$schema": "https://ui.shadcn.com/r/schema.json",
   "src": true,
   "style": "new-york",
-  "tailwind": ***REMOVED***
+  "tailwind": {
     "css": "src/app/globals.css"
-  ***REMOVED***
-***REMOVED***
+  }
+}

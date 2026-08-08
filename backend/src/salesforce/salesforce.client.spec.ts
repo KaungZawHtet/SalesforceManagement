@@ -1,69 +1,69 @@
-import ***REMOVED*** ConfigService ***REMOVED*** from '@nestjs/config';
-import ***REMOVED***
+import { ConfigService } from '@nestjs/config';
+import {
   BadRequestException,
   HttpException,
   ServiceUnavailableException,
   UnauthorizedException,
-***REMOVED*** from '@nestjs/common';
-import ***REMOVED*** SalesforceClient ***REMOVED*** from './salesforce.client';
-import ***REMOVED*** OauthService ***REMOVED*** from './oauth.service';
-import ***REMOVED*** CachedToken ***REMOVED*** from './token-cache';
-import ***REMOVED*** SalesforceConfig ***REMOVED*** from '../config/configuration';
+} from '@nestjs/common';
+import { SalesforceClient } from './salesforce.client';
+import { OauthService } from './oauth.service';
+import type { CachedToken } from './token-cache';
+import type { SalesforceConfig } from '../config/configuration';
 
 const fetchMock = jest.fn() as unknown as jest.MockedFunction<typeof fetch>;
 global.fetch = fetchMock;
 
-const salesforceConfig: SalesforceConfig = ***REMOVED***
+const salesforceConfig: SalesforceConfig = {
   clientId: 'client-id',
   clientSecret: 'client-secret',
   loginUrl: 'https://login.salesforce.com',
   apiVersion: '60.0',
-***REMOVED***;
+};
 
-function makeConfigService(): ConfigService ***REMOVED***
-  const store: Record<string, unknown> = ***REMOVED*** salesforce: salesforceConfig ***REMOVED***;
-  return ***REMOVED***
+function makeConfigService(): ConfigService {
+  const store: Record<string, unknown> = { salesforce: salesforceConfig };
+  return {
     get: jest.fn(((key: string) => store[key]) as (key: string) => unknown),
-  ***REMOVED*** as unknown as ConfigService;
-***REMOVED***
+  } as unknown as ConfigService;
+}
 
-function makeToken(token = 'access-token-1'): CachedToken ***REMOVED***
-  return ***REMOVED***
+function makeToken(token = 'access-token-1'): CachedToken {
+  return {
     accessToken: token,
     instanceUrl: 'https://instance.salesforce.com',
     expiresAt: Date.now() + 3600_000,
-  ***REMOVED***;
-***REMOVED***
+  };
+}
 
-function makeResponse(status: number, body: unknown): Response ***REMOVED***
-  return new Response(typeof body === 'string' ? body : JSON.stringify(body), ***REMOVED***
+function makeResponse(status: number, body: unknown): Response {
+  return new Response(typeof body === 'string' ? body : JSON.stringify(body), {
     status,
-  ***REMOVED***);
-***REMOVED***
+  });
+}
 
-function headersOf(init: RequestInit): Record<string, string> ***REMOVED***
+function headersOf(init: RequestInit): Record<string, string> {
   return init.headers as Record<string, string>;
-***REMOVED***
+}
 
-describe('SalesforceClient', () => ***REMOVED***
+describe('SalesforceClient', () => {
   let client: SalesforceClient;
-  let oauthService: ***REMOVED*** authenticate: jest.Mock; invalidate: jest.Mock ***REMOVED***;
+  let oauthService: { authenticate: jest.Mock; invalidate: jest.Mock };
 
-  beforeEach(() => ***REMOVED***
+  beforeEach(() => {
     jest.clearAllMocks();
-    oauthService = ***REMOVED***
+    oauthService = {
       authenticate: jest.fn(),
       invalidate: jest.fn(),
-***REMOVED***;
+    };
     client = new SalesforceClient(
       makeConfigService(),
       oauthService as unknown as OauthService,
     );
-  ***REMOVED***);
+  });
 
-  it('builds the request URL and attaches the bearer token', async () => ***REMOVED***
+  it('builds the request URL and attaches the bearer token', async () => {
     oauthService.authenticate.mockResolvedValue(makeToken());
-    fetchMock.mockResolvedValue(makeResponse(200, ***REMOVED*** records: [] ***REMOVED***));
+    fetchMock.mockResolvedValue(makeResponse(200, { records: [] }));
 
     await client.request('/query');
 
@@ -73,30 +73,30 @@ describe('SalesforceClient', () => ***REMOVED***
     expect(
       headersOf(fetchMock.mock.calls[0][1] as RequestInit).Authorization,
     ).toBe('Bearer access-token-1');
-  ***REMOVED***);
+  });
 
-  it('parses the JSON response body', async () => ***REMOVED***
+  it('parses the JSON response body', async () => {
     oauthService.authenticate.mockResolvedValue(makeToken());
     fetchMock.mockResolvedValue(
-      makeResponse(200, ***REMOVED*** totalSize: 1, records: [***REMOVED*** Id: '001' ***REMOVED***] ***REMOVED***),
+      makeResponse(200, { totalSize: 1, records: [{ Id: '001' }] }),
     );
 
     const result = await client.request('/sobjects/Account');
 
-    expect(result).toEqual(***REMOVED*** totalSize: 1, records: [***REMOVED*** Id: '001' ***REMOVED***] ***REMOVED***);
-  ***REMOVED***);
+    expect(result).toEqual({ totalSize: 1, records: [{ Id: '001' }] });
+  });
 
-  it('retries once with a refreshed token after a 401', async () => ***REMOVED***
+  it('retries once with a refreshed token after a 401', async () => {
     oauthService.authenticate
       .mockResolvedValueOnce(makeToken('first'))
       .mockResolvedValueOnce(makeToken('second'));
     fetchMock
       .mockResolvedValueOnce(
         makeResponse(401, [
-          ***REMOVED*** errorCode: 'INVALID_SESSION_ID', message: 'session expired' ***REMOVED***,
-      ***REMOVED***),
+          { errorCode: 'INVALID_SESSION_ID', message: 'session expired' },
+        ]),
       )
-      .mockResolvedValueOnce(makeResponse(200, ***REMOVED*** records: [] ***REMOVED***));
+      .mockResolvedValueOnce(makeResponse(200, { records: [] }));
 
     await client.request('/query');
 
@@ -106,66 +106,66 @@ describe('SalesforceClient', () => ***REMOVED***
     expect(
       headersOf(fetchMock.mock.calls[1][1] as RequestInit).Authorization,
     ).toBe('Bearer second');
-  ***REMOVED***);
+  });
 
-  it('throws UnauthorizedException when the retry also returns 401', async () => ***REMOVED***
+  it('throws UnauthorizedException when the retry also returns 401', async () => {
     oauthService.authenticate.mockResolvedValue(makeToken());
     fetchMock.mockResolvedValue(
       makeResponse(401, [
-        ***REMOVED*** errorCode: 'INVALID_SESSION_ID', message: 'session expired' ***REMOVED***,
-    ***REMOVED***),
+        { errorCode: 'INVALID_SESSION_ID', message: 'session expired' },
+      ]),
     );
 
     await expect(client.request('/query')).rejects.toThrow(
       UnauthorizedException,
     );
     expect(fetchMock).toHaveBeenCalledTimes(2);
-  ***REMOVED***);
+  });
 
-  it('translates non-401 Salesforce errors', async () => ***REMOVED***
+  it('translates non-401 Salesforce errors', async () => {
     oauthService.authenticate.mockResolvedValue(makeToken());
     fetchMock.mockResolvedValue(
       makeResponse(400, [
-        ***REMOVED***
+        {
           errorCode: 'FIELD_CUSTOM_VALIDATION_EXCEPTION',
           message: 'field error',
-    ***REMOVED***
-    ***REMOVED***),
+        },
+      ]),
     );
 
     await expect(
-      client.request('/sobjects/Account', ***REMOVED***
+      client.request('/sobjects/Account', {
         method: 'POST',
-        body: '***REMOVED******REMOVED***',
-  ***REMOVED***),
+        body: '{}',
+      }),
     ).rejects.toThrow(BadRequestException);
-  ***REMOVED***);
+  });
 
-  it('passes the request body for POST requests', async () => ***REMOVED***
+  it('passes the request body for POST requests', async () => {
     oauthService.authenticate.mockResolvedValue(makeToken());
-    fetchMock.mockResolvedValue(makeResponse(200, ***REMOVED*** id: '001' ***REMOVED***));
+    fetchMock.mockResolvedValue(makeResponse(200, { id: '001' }));
 
-    await client.request('/sobjects/Account', ***REMOVED***
+    await client.request('/sobjects/Account', {
       method: 'POST',
-      body: JSON.stringify(***REMOVED*** Name: 'Acme' ***REMOVED***),
-***REMOVED***);
+      body: JSON.stringify({ Name: 'Acme' }),
+    });
 
     expect((fetchMock.mock.calls[0][1] as RequestInit).method).toBe('POST');
     expect((fetchMock.mock.calls[0][1] as RequestInit).body).toBe(
-      JSON.stringify(***REMOVED*** Name: 'Acme' ***REMOVED***),
+      JSON.stringify({ Name: 'Acme' }),
     );
-  ***REMOVED***);
+  });
 
-  it('translates an initial network failure into a gateway error', async () => ***REMOVED***
+  it('translates an initial network failure into a gateway error', async () => {
     oauthService.authenticate.mockResolvedValue(makeToken());
     fetchMock.mockRejectedValue(new TypeError('network down'));
 
     await expect(client.request('/query')).rejects.toThrow(
       ServiceUnavailableException,
     );
-  ***REMOVED***);
+  });
 
-  it('translates a network failure during token retry', async () => ***REMOVED***
+  it('translates a network failure during token retry', async () => {
     oauthService.authenticate
       .mockResolvedValueOnce(makeToken('first'))
       .mockResolvedValueOnce(makeToken('second'));
@@ -177,9 +177,9 @@ describe('SalesforceClient', () => ***REMOVED***
       ServiceUnavailableException,
     );
     expect(oauthService.invalidate).toHaveBeenCalledTimes(1);
-  ***REMOVED***);
+  });
 
-  it('translates an aborted request into a 504 error', async () => ***REMOVED***
+  it('translates an aborted request into a 504 error', async () => {
     oauthService.authenticate.mockResolvedValue(makeToken());
     const error = new Error('aborted');
     error.name = 'AbortError';
@@ -188,5 +188,5 @@ describe('SalesforceClient', () => ***REMOVED***
     await expect(client.request('/query')).rejects.toMatchObject(
       new HttpException('Salesforce request timed out. Please try again.', 504),
     );
-  ***REMOVED***);
-***REMOVED***);
+  });
+});

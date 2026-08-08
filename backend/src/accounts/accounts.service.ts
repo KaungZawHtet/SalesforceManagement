@@ -1,21 +1,21 @@
-import ***REMOVED*** Injectable ***REMOVED*** from '@nestjs/common';
-import ***REMOVED*** SalesforceService ***REMOVED*** from '../salesforce/salesforce.service';
-import type ***REMOVED***
+import { Injectable } from '@nestjs/common';
+import { SalesforceService } from '../salesforce/salesforce.service';
+import type {
   AccountCreateResponse,
   AccountListResponse,
-***REMOVED*** from './types/account';
-import type ***REMOVED*** CreateAccountDto ***REMOVED*** from './dto/create-account.dto';
+} from './types/account';
+import type { CreateAccountDto } from './dto/create-account.dto';
 
 @Injectable()
-export class AccountsService ***REMOVED***
-  constructor(private readonly salesforceService: SalesforceService) ***REMOVED******REMOVED***
+export class AccountsService {
+  constructor(private readonly salesforceService: SalesforceService) {}
 
-  async listAccounts(limit?: number): Promise<AccountListResponse> ***REMOVED***
+  async listAccounts(limit?: number): Promise<AccountListResponse> {
     return this.salesforceService.listAccounts(limit);
-  ***REMOVED***
+  }
 
-  async createAccount(input: CreateAccountDto): Promise<AccountCreateResponse> ***REMOVED***
+  async createAccount(input: CreateAccountDto): Promise<AccountCreateResponse> {
     const account = await this.salesforceService.createAccount(input);
-    return ***REMOVED*** data: account ***REMOVED***;
-  ***REMOVED***
-***REMOVED***
+    return { data: account };
+  }
+}

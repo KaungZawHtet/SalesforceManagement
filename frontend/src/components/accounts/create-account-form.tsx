@@ -1,16 +1,17 @@
 'use client';
 
-import ***REMOVED*** useForm ***REMOVED*** from 'react-hook-form';
-import ***REMOVED*** z ***REMOVED*** from 'zod';
-import ***REMOVED*** zodResolver ***REMOVED*** from '@hookform/resolvers/zod';
-import ***REMOVED*** Button ***REMOVED*** from '@/components/ui/button';
-import ***REMOVED*** Input ***REMOVED*** from '@/components/ui/input';
-import ***REMOVED*** Label ***REMOVED*** from '@/components/ui/label';
-import ***REMOVED*** createAccount ***REMOVED*** from '@/lib/api/accounts';
-import ***REMOVED*** type Account ***REMOVED*** from '@/types/account';
-import ***REMOVED*** toast ***REMOVED*** from 'sonner';
+import { LoaderCircle, Plus } from 'lucide-react';
+import { useForm } from 'react-hook-form';
+import { z } from 'zod';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { createAccount } from '@/lib/api/accounts';
+import type { Account } from '@/types/account';
+import { toast } from 'sonner';
 
-const formSchema = z.object(***REMOVED***
+const formSchema = z.object({
   name: z
     .string()
     .trim()
@@ -28,108 +29,142 @@ const formSchema = z.object(***REMOVED***
     (value) => (typeof value === 'string' && value.trim() === '' ? undefined : value),
     z.string().trim().max(255, 'Industry must not exceed 255 characters').optional(),
   ),
-***REMOVED***);
+});
 
 type FormValues = z.infer<typeof formSchema>;
 type FormInput = z.input<typeof formSchema>;
 
-interface CreateAccountFormProps ***REMOVED***
+interface CreateAccountFormProps {
   onSuccess: (account: Account) => void | Promise<void>;
-***REMOVED***
+}
 
-export function CreateAccountForm(***REMOVED*** onSuccess ***REMOVED***: CreateAccountFormProps) ***REMOVED***
-  const ***REMOVED***
+export function CreateAccountForm({ onSuccess }: CreateAccountFormProps) {
+  const {
     register,
     handleSubmit,
-    formState: ***REMOVED*** errors, isSubmitting ***REMOVED***,
+    formState: { errors, isSubmitting },
     reset,
-  ***REMOVED*** = useForm<FormInput, unknown, FormValues>(***REMOVED***
+  } = useForm<FormInput, unknown, FormValues>({
     resolver: zodResolver(formSchema),
-  ***REMOVED***);
+  });
 
-  const onSubmit = async (data: FormValues) => ***REMOVED***
-    try ***REMOVED***
-      const account = await createAccount(***REMOVED***
+  const onSubmit = async (data: FormValues) => {
+    try {
+      const account = await createAccount({
         name: data.name,
         phone: data.phone,
         website: data.website,
         industry: data.industry,
-  ***REMOVED***);
+      });
       reset();
       await onSuccess(account);
-***REMOVED*** catch (error) ***REMOVED***
+    } catch (error) {
       const message =
         error && typeof error === 'object' && 'message' in error &&
         typeof error.message === 'string'
           ? error.message
           : 'Something went wrong. Please try again.';
       toast.error(message);
-***REMOVED***
-  ***REMOVED***;
+    }
+  };
 
   return (
-    <form onSubmit=***REMOVED***handleSubmit(onSubmit)***REMOVED*** className="space-y-4">
+    <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
       <div className="space-y-2">
-        <Label htmlFor="name">Name *</Label>
+        <Label className="text-foreground" htmlFor="name">
+          Name *
+        </Label>
         <Input
           id="name"
           placeholder="Acme Corporation"
-          ***REMOVED***...register('name')***REMOVED***
-          aria-invalid=***REMOVED***errors.name ? 'true' : 'false'***REMOVED***
-          aria-describedby=***REMOVED***errors.name ? 'name-error' : undefined***REMOVED***
+          className={errors.name ? 'border-destructive/60 focus-visible:ring-destructive/40' : ''}
+          {...register('name')}
+          aria-invalid={errors.name ? 'true' : 'false'}
+          aria-describedby={errors.name ? 'name-error' : undefined}
         />
-        ***REMOVED***errors.name && (
-          <p id="name-error" className="text-sm text-destructive">
-            ***REMOVED***errors.name.message***REMOVED***
+        {errors.name && (
+          <p id="name-error" role="alert" className="text-xs font-medium text-destructive">
+            {errors.name.message}
           </p>
-        )***REMOVED***
+        )}
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="phone">Phone</Label>
+        <Label className="text-foreground" htmlFor="phone">
+          Phone
+        </Label>
         <Input
           id="phone"
           placeholder="+1 555-1234"
-          ***REMOVED***...register('phone')***REMOVED***
-          aria-invalid=***REMOVED***errors.phone ? 'true' : 'false'***REMOVED***
-          aria-describedby=***REMOVED***errors.phone ? 'phone-error' : undefined***REMOVED***
+          className={errors.phone ? 'border-destructive/60 focus-visible:ring-destructive/40' : ''}
+          {...register('phone')}
+          aria-invalid={errors.phone ? 'true' : 'false'}
+          aria-describedby={errors.phone ? 'phone-error' : undefined}
         />
-        ***REMOVED***errors.phone && (
-          <p id="phone-error" className="text-sm text-destructive">
-            ***REMOVED***errors.phone.message***REMOVED***
+        {errors.phone && (
+          <p id="phone-error" role="alert" className="text-xs font-medium text-destructive">
+            {errors.phone.message}
           </p>
-        )***REMOVED***
+        )}
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="website">Website</Label>
+        <Label className="text-foreground" htmlFor="website">
+          Website
+        </Label>
         <Input
           id="website"
           type="url"
           placeholder="https://example.com"
-          ***REMOVED***...register('website')***REMOVED***
-          aria-invalid=***REMOVED***errors.website ? 'true' : 'false'***REMOVED***
-          aria-describedby=***REMOVED***errors.website ? 'website-error' : undefined***REMOVED***
+          className={errors.website ? 'border-destructive/60 focus-visible:ring-destructive/40' : ''}
+          {...register('website')}
+          aria-invalid={errors.website ? 'true' : 'false'}
+          aria-describedby={errors.website ? 'website-error' : undefined}
         />
-        ***REMOVED***errors.website && (
-          <p id="website-error" className="text-sm text-destructive">
-            ***REMOVED***errors.website.message***REMOVED***
+        {errors.website && (
+          <p id="website-error" role="alert" className="text-xs font-medium text-destructive">
+            {errors.website.message}
           </p>
-        )***REMOVED***
+        )}
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="industry">Industry</Label>
+        <Label className="text-foreground" htmlFor="industry">
+          Industry
+        </Label>
         <Input
           id="industry"
           placeholder="Technology"
-          ***REMOVED***...register('industry')***REMOVED***
+          className={errors.industry ? 'border-destructive/60 focus-visible:ring-destructive/40' : ''}
+          {...register('industry')}
+          aria-invalid={errors.industry ? 'true' : 'false'}
+          aria-describedby={errors.industry ? 'industry-error' : undefined}
         />
+        {errors.industry && (
+          <p id="industry-error" role="alert" className="text-xs font-medium text-destructive">
+            {errors.industry.message}
+          </p>
+        )}
       </div>
 
-      <Button type="submit" disabled=***REMOVED***isSubmitting***REMOVED***>
-        ***REMOVED***isSubmitting ? 'Creating...' : 'Create Account'***REMOVED***
+      <Button
+        type="submit"
+        className="mt-2 h-11 w-full rounded-lg shadow-sm"
+        disabled={isSubmitting}
+        aria-busy={isSubmitting}
+      >
+        {isSubmitting ? (
+          <>
+            <LoaderCircle aria-hidden="true" className="animate-spin" />
+            Creating...
+          </>
+        ) : (
+          <>
+            <Plus aria-hidden="true" />
+            Create Account
+          </>
+        )}
       </Button>
     </form>
   );
-***REMOVED***
+}

@@ -1,106 +1,106 @@
-import ***REMOVED*** BadGatewayException, Injectable, Logger ***REMOVED*** from '@nestjs/common';
-import ***REMOVED*** SalesforceClient ***REMOVED*** from './salesforce.client';
-import type ***REMOVED*** Account, AccountListResponse ***REMOVED*** from '../accounts/types/account';
-import type ***REMOVED*** CreateAccountDto ***REMOVED*** from '../accounts/dto/create-account.dto';
-import ***REMOVED***
+import { BadGatewayException, Injectable, Logger } from '@nestjs/common';
+import { SalesforceClient } from './salesforce.client';
+import type { Account, AccountListResponse } from '../accounts/types/account';
+import type { CreateAccountDto } from '../accounts/dto/create-account.dto';
+import type {
   SalesforceAccountRecord,
   SalesforceCreateResponse,
   SalesforceQueryResponse,
-***REMOVED*** from './types/salesforce.interfaces';
+} from './types/salesforce.interfaces';
 
 const DEFAULT_LIMIT = 100;
 const MAX_LIMIT = 2000;
 
 @Injectable()
-export class SalesforceService ***REMOVED***
+export class SalesforceService {
   private readonly logger = new Logger(SalesforceService.name);
 
-  constructor(private readonly client: SalesforceClient) ***REMOVED******REMOVED***
+  constructor(private readonly client: SalesforceClient) {}
 
-  async listAccounts(limit?: number): Promise<AccountListResponse> ***REMOVED***
+  async listAccounts(limit?: number): Promise<AccountListResponse> {
     const resolvedLimit = this.resolveLimit(limit);
-    const soql = `SELECT Id, Name, Phone, Website, Industry FROM Account ORDER BY Name LIMIT $***REMOVED***resolvedLimit***REMOVED***`;
+    const soql = `SELECT Id, Name, Phone, Website, Industry FROM Account ORDER BY Name LIMIT ${resolvedLimit}`;
     const response = await this.client.request<
       SalesforceQueryResponse<SalesforceAccountRecord>
-    >(`/query?q=$***REMOVED***encodeURIComponent(soql)***REMOVED***`);
+    >(`/query?q=${encodeURIComponent(soql)}`);
     return this.toAccountList(response, resolvedLimit);
-  ***REMOVED***
+  }
 
-  async createAccount(input: CreateAccountDto): Promise<Account> ***REMOVED***
+  async createAccount(input: CreateAccountDto): Promise<Account> {
     const payload = this.toSalesforcePayload(input);
     const created = await this.client.request<SalesforceCreateResponse>(
       '/sobjects/Account',
-      ***REMOVED*** method: 'POST', body: JSON.stringify(payload) ***REMOVED***,
+      { method: 'POST', body: JSON.stringify(payload) },
     );
     if (
       !created ||
       created.success !== true ||
       typeof created.id !== 'string' ||
       created.id.trim() === ''
-    ) ***REMOVED***
+    ) {
       throw new BadGatewayException(
         'Salesforce returned an invalid account creation response.',
       );
-***REMOVED***
+    }
 
     const id = created.id;
-    this.logger.log(`Created Salesforce Account $***REMOVED***id***REMOVED***`);
+    this.logger.log(`Created Salesforce Account ${id}`);
     const record = await this.client.request<SalesforceAccountRecord>(
-      `/sobjects/Account/$***REMOVED***id***REMOVED***?fields=Id,Name,Phone,Website,Industry`,
+      `/sobjects/Account/${id}?fields=Id,Name,Phone,Website,Industry`,
     );
     return this.toAccount(record);
-  ***REMOVED***
+  }
 
-  private resolveLimit(limit?: number): number ***REMOVED***
-    if (limit === undefined || Number.isNaN(limit)) ***REMOVED***
+  private resolveLimit(limit?: number): number {
+    if (limit === undefined || Number.isNaN(limit)) {
       return DEFAULT_LIMIT;
-***REMOVED***
-    if (limit < 1) ***REMOVED***
+    }
+    if (limit < 1) {
       return 1;
-***REMOVED***
+    }
     return limit > MAX_LIMIT ? MAX_LIMIT : Math.floor(limit);
-  ***REMOVED***
+  }
 
   private toAccountList(
     response: SalesforceQueryResponse<SalesforceAccountRecord>,
     limit: number,
-  ): AccountListResponse ***REMOVED***
+  ): AccountListResponse {
     const records = response.records ?? [];
     const data = records.map((record) => this.toAccount(record));
-    return ***REMOVED***
+    return {
       data,
-      meta: ***REMOVED***
+      meta: {
         total: response.totalSize,
         limit,
         offset: 0,
-  ***REMOVED***
-***REMOVED***;
-  ***REMOVED***
+      },
+    };
+  }
 
-  private toSalesforcePayload(input: CreateAccountDto): Record<string, string> ***REMOVED***
-    const payload: Record<string, string> = ***REMOVED******REMOVED***;
-    if (input.name) ***REMOVED***
+  private toSalesforcePayload(input: CreateAccountDto): Record<string, string> {
+    const payload: Record<string, string> = {};
+    if (input.name) {
       payload.Name = input.name;
-***REMOVED***
-    if (input.phone) ***REMOVED***
+    }
+    if (input.phone) {
       payload.Phone = input.phone;
-***REMOVED***
-    if (input.website) ***REMOVED***
+    }
+    if (input.website) {
       payload.Website = input.website;
-***REMOVED***
-    if (input.industry) ***REMOVED***
+    }
+    if (input.industry) {
       payload.Industry = input.industry;
-***REMOVED***
+    }
     return payload;
-  ***REMOVED***
+  }
 
-  private toAccount(record: SalesforceAccountRecord): Account ***REMOVED***
-    return ***REMOVED***
+  private toAccount(record: SalesforceAccountRecord): Account {
+    return {
       id: record.Id,
       name: record.Name,
       phone: record.Phone ?? undefined,
       website: record.Website ?? undefined,
       industry: record.Industry ?? undefined,
-***REMOVED***;
-  ***REMOVED***
-***REMOVED***
+    };
+  }
+}

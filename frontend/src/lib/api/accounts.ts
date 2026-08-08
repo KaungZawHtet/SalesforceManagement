@@ -1,113 +1,120 @@
-import ***REMOVED*** type ApiErrorBody, type Account, type AccountCreateResponse, type AccountListResponse ***REMOVED*** from '../../types/account';
+import type {
+  ApiErrorBody,
+  Account,
+  AccountCreateResponse,
+  AccountListResponse,
+} from '../../types/account';
 
 const NETWORK_MESSAGE = 'Unable to reach the server. Please check your connection and try again.';
 const GENERIC_MESSAGE = 'Something went wrong. Please try again.';
 
-function friendly(status: number): string ***REMOVED***
-  if (status === 400) ***REMOVED***
+function friendly(status: number): string {
+  if (status === 400) {
     return 'Please check the form and try again.';
-  ***REMOVED***
-  if (status === 401 || status === 403) ***REMOVED***
+  }
+  if (status === 401 || status === 403) {
     return 'You are not authorised to perform this action.';
-  ***REMOVED***
-  if (status === 404) ***REMOVED***
+  }
+  if (status === 404) {
     return 'The requested information could not be found.';
-  ***REMOVED***
-  if (status >= 500) ***REMOVED***
+  }
+  if (status >= 500) {
     return 'The server is currently unavailable. Please try again shortly.';
-  ***REMOVED***
+  }
   return GENERIC_MESSAGE;
-***REMOVED***
+}
 
-function isErrorBody(value: unknown): value is ApiErrorBody ***REMOVED***
+function isErrorBody(value: unknown): value is ApiErrorBody {
   if (typeof value !== 'object' || value === null) return false;
-  const r = value as Record<string, unknown>;
-  return typeof r.statusCode === 'number' && typeof r.message === 'string';
-***REMOVED***
+  const record = value as Record<string, unknown>;
+  return typeof record.statusCode === 'number' && typeof record.message === 'string';
+}
 
-interface FetchOptions ***REMOVED***
+interface FetchOptions {
   method?: 'GET' | 'POST' | 'PUT' | 'DELETE';
   headers?: HeadersInit;
   body?: string;
-***REMOVED***
+}
 
-export async function fetchJson<T>(path: string, options: FetchOptions = ***REMOVED******REMOVED***): Promise<T> ***REMOVED***
+export async function fetchJson<T>(path: string, options: FetchOptions = {}): Promise<T> {
   const baseUrl = process.env.NEXT_PUBLIC_API_URL;
-  if (!baseUrl) ***REMOVED***
-    throw ***REMOVED*** statusCode: 0, message: 'API URL is not configured.' ***REMOVED*** as ApiErrorBody;
-  ***REMOVED***
-  const url = `$***REMOVED***baseUrl***REMOVED***$***REMOVED***path***REMOVED***`;
+  if (!baseUrl) {
+    throw { statusCode: 0, message: 'API URL is not configured.' } as ApiErrorBody;
+  }
+
+  const url = `${baseUrl}${path}`;
   let res: Response;
-  try ***REMOVED***
-    res = await fetch(url, ***REMOVED***
+  try {
+    res = await fetch(url, {
       method: options.method ?? 'GET',
-      headers: ***REMOVED***
+      headers: {
         'Content-Type': 'application/json',
         Accept: 'application/json',
-        ...(options.headers ?? ***REMOVED******REMOVED***),
-  ***REMOVED***
+        ...(options.headers ?? {}),
+      },
       body: options.body,
       cache: 'no-store',
-***REMOVED***);
-  ***REMOVED*** catch ***REMOVED***
-    throw ***REMOVED*** statusCode: 0, message: NETWORK_MESSAGE ***REMOVED*** as ApiErrorBody;
-  ***REMOVED***
+    });
+  } catch {
+    throw { statusCode: 0, message: NETWORK_MESSAGE } as ApiErrorBody;
+  }
 
   const text = await res.text();
-  if (!text) ***REMOVED***
-    if (!res.ok) ***REMOVED***
-      throw ***REMOVED*** statusCode: res.status, message: friendly(res.status) ***REMOVED*** as ApiErrorBody;
-***REMOVED***
+  if (!text) {
+    if (!res.ok) {
+      throw { statusCode: res.status, message: friendly(res.status) } as ApiErrorBody;
+    }
     return null as T;
-  ***REMOVED***
-  let body: unknown;
-  try ***REMOVED***
-    body = JSON.parse(text);
-  ***REMOVED*** catch ***REMOVED***
-    if (!res.ok) ***REMOVED***
-      throw ***REMOVED*** statusCode: res.status, message: friendly(res.status) ***REMOVED*** as ApiErrorBody;
-***REMOVED***
-    return text as T;
-  ***REMOVED***
+  }
 
-  if (!res.ok) ***REMOVED***
+  let body: unknown;
+  try {
+    body = JSON.parse(text);
+  } catch {
+    if (!res.ok) {
+      throw { statusCode: res.status, message: friendly(res.status) } as ApiErrorBody;
+    }
+    return text as T;
+  }
+
+  if (!res.ok) {
     const errors = isErrorBody(body) ? body.errors : undefined;
-    throw ***REMOVED*** statusCode: res.status, message: friendly(res.status), errors ***REMOVED*** as ApiErrorBody;
-  ***REMOVED***
+    throw { statusCode: res.status, message: friendly(res.status), errors } as ApiErrorBody;
+  }
 
   return body as T;
-***REMOVED***
+}
 
-export async function getAccounts(limit?: number): Promise<AccountListResponse> ***REMOVED***
-  const params = limit ? `?limit=$***REMOVED***encodeURIComponent(String(limit))***REMOVED***` : '';
-  return fetchJson<AccountListResponse>(`/api/accounts$***REMOVED***params***REMOVED***`);
-***REMOVED***
+export async function getAccounts(limit?: number): Promise<AccountListResponse> {
+  const params = limit ? `?limit=${encodeURIComponent(String(limit))}` : '';
+  return fetchJson<AccountListResponse>(`/api/accounts${params}`);
+}
 
-export async function createAccount(values: ***REMOVED***
+export async function createAccount(values: {
   name: string;
   phone?: string;
   website?: string;
   industry?: string;
-***REMOVED***): Promise<Account> ***REMOVED***
-  const payload: Record<string, string | undefined> = ***REMOVED***
+}): Promise<Account> {
+  const payload: Record<string, string | undefined> = {
     name: values.name,
-  ***REMOVED***;
-  if (values.phone?.trim()) ***REMOVED***
+  };
+  if (values.phone?.trim()) {
     payload.phone = values.phone.trim();
-  ***REMOVED***
-  if (values.website?.trim()) ***REMOVED***
+  }
+  if (values.website?.trim()) {
     payload.website = values.website.trim();
-  ***REMOVED***
-  if (values.industry?.trim()) ***REMOVED***
+  }
+  if (values.industry?.trim()) {
     payload.industry = values.industry.trim();
-  ***REMOVED***
+  }
   const cleaned = Object.fromEntries(
-    Object.entries(payload).filter(([, v]) => v !== undefined && v !== '')
+    Object.entries(payload).filter(([, value]) => value !== undefined && value !== ''),
   ) as Record<string, string>;
 
-  const res = await fetchJson<AccountCreateResponse>('/api/accounts', ***REMOVED***
+  const response = await fetchJson<AccountCreateResponse>('/api/accounts', {
     method: 'POST',
     body: JSON.stringify(cleaned),
-  ***REMOVED***);
-  return res.data;
-***REMOVED***
+  });
+  return response.data;
+}

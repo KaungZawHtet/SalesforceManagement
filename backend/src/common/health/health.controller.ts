@@ -1,10 +1,10 @@
-import ***REMOVED*** Controller, Get, HttpCode ***REMOVED*** from '@nestjs/common';
+import { Controller, Get, HttpCode } from '@nestjs/common';
 
 @Controller('api/health')
-export class HealthController ***REMOVED***
+export class HealthController {
   @Get()
   @HttpCode(200)
-  check(): ***REMOVED*** status: string ***REMOVED*** ***REMOVED***
-    return ***REMOVED*** status: 'ok' ***REMOVED***;
-  ***REMOVED***
-***REMOVED***
+  check(): { status: string } {
+    return { status: 'ok' };
+  }
+}

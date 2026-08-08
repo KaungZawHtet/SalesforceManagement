@@ -1,40 +1,44 @@
-'use client';
+import type { Account } from '@/types/account';
+import {
+  Table,
+  TableBody,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
+import { AccountRow } from './account-row';
 
-import ***REMOVED*** Account ***REMOVED*** from '@/types/account';
-import ***REMOVED*** AccountRow ***REMOVED*** from './account-row';
-
-export function AccountsTable(***REMOVED*** accounts ***REMOVED***: ***REMOVED*** accounts: Account[] ***REMOVED***) ***REMOVED***
-  if (accounts.length === 0) ***REMOVED***
+export function AccountsTable({ accounts }: { accounts: Account[] }) {
+  if (accounts.length === 0) {
     return null;
-  ***REMOVED***
+  }
 
   return (
-    <div className="rounded-md border">
-      <div className="relative w-full overflow-auto">
-        <table className="w-full caption-bottom text-sm">
-          <thead className="[&_tr]:border-b">
-            <tr className="border-b transition-colors hover:bg-muted/50">
-              <th className="h-12 px-4 text-left align-middle bg-muted font-medium text-muted-foreground">
-                Name
-              </th>
-              <th className="h-12 px-4 text-left align-middle bg-muted font-medium text-muted-foreground">
-                Phone
-              </th>
-              <th className="h-12 px-4 text-left align-middle bg-muted font-medium text-muted-foreground">
-                Website
-              </th>
-              <th className="h-12 px-4 text-left align-middle bg-muted font-medium text-muted-foreground">
-                Industry
-              </th>
-            </tr>
-          </thead>
-          <tbody className="[&_tr]:border-b">
-            ***REMOVED***accounts.map((account) => (
-              <AccountRow key=***REMOVED***account.id***REMOVED*** account=***REMOVED***account***REMOVED*** />
-            ))***REMOVED***
-          </tbody>
-        </table>
-      </div>
+    <div className="w-full overflow-x-auto">
+      <Table className="min-w-[680px]">
+        <caption className="sr-only">Salesforce account records</caption>
+        <TableHeader className="bg-muted/40">
+          <TableRow className="hover:bg-transparent">
+            <TableHead className="h-11 text-[11px] font-semibold uppercase tracking-[0.14em]">
+              Name
+            </TableHead>
+            <TableHead className="h-11 text-[11px] font-semibold uppercase tracking-[0.14em]">
+              Phone
+            </TableHead>
+            <TableHead className="h-11 text-[11px] font-semibold uppercase tracking-[0.14em]">
+              Website
+            </TableHead>
+            <TableHead className="h-11 text-[11px] font-semibold uppercase tracking-[0.14em]">
+              Industry
+            </TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {accounts.map((account) => (
+            <AccountRow key={account.id} account={account} />
+          ))}
+        </TableBody>
+      </Table>
     </div>
   );
-***REMOVED***
+}

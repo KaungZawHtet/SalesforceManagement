@@ -1,11 +1,11 @@
-import ***REMOVED*** Module ***REMOVED*** from '@nestjs/common';
-import ***REMOVED*** SalesforceService ***REMOVED*** from './salesforce.service';
-import ***REMOVED*** SalesforceClient ***REMOVED*** from './salesforce.client';
-import ***REMOVED*** OauthService ***REMOVED*** from './oauth.service';
-import ***REMOVED*** TokenCache ***REMOVED*** from './token-cache';
+import { Module } from '@nestjs/common';
+import { SalesforceService } from './salesforce.service';
+import { SalesforceClient } from './salesforce.client';
+import { OauthService } from './oauth.service';
+import { TokenCache } from './token-cache';
 
-@Module(***REMOVED***
+@Module({
   providers: [TokenCache, OauthService, SalesforceClient, SalesforceService],
   exports: [SalesforceService],
-***REMOVED***)
-export class SalesforceModule ***REMOVED******REMOVED***
+})
+export class SalesforceModule {}

@@ -1,5 +1,5 @@
-module.exports = ***REMOVED***
-  plugins: ***REMOVED***
-    '@tailwindcss/postcss': ***REMOVED******REMOVED***,
-  ***REMOVED***,
-***REMOVED***;
+module.exports = {
+  plugins: {
+    '@tailwindcss/postcss': {},
+  },
+};

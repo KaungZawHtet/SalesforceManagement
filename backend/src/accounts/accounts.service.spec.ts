@@ -1,44 +1,44 @@
-import ***REMOVED*** AccountsService ***REMOVED*** from './accounts.service';
-import ***REMOVED*** SalesforceService ***REMOVED*** from '../salesforce/salesforce.service';
+import { AccountsService } from './accounts.service';
+import { SalesforceService } from '../salesforce/salesforce.service';
 
-describe('AccountsService', () => ***REMOVED***
+describe('AccountsService', () => {
   let service: AccountsService;
-  let salesforceService: ***REMOVED*** listAccounts: jest.Mock; createAccount: jest.Mock ***REMOVED***;
+  let salesforceService: { listAccounts: jest.Mock; createAccount: jest.Mock };
 
-  beforeEach(() => ***REMOVED***
-    salesforceService = ***REMOVED***
+  beforeEach(() => {
+    salesforceService = {
       listAccounts: jest.fn(),
       createAccount: jest.fn(),
-***REMOVED***;
+    };
     service = new AccountsService(
       salesforceService as unknown as SalesforceService,
     );
-  ***REMOVED***);
+  });
 
-  it('delegates listing to the Salesforce service', async () => ***REMOVED***
-    const expected = ***REMOVED***
+  it('delegates listing to the Salesforce service', async () => {
+    const expected = {
       data: [],
-      meta: ***REMOVED*** total: 0, limit: 100, offset: 0 ***REMOVED***,
-***REMOVED***;
+      meta: { total: 0, limit: 100, offset: 0 },
+    };
     salesforceService.listAccounts.mockResolvedValue(expected);
 
     const result = await service.listAccounts(50);
 
     expect(salesforceService.listAccounts).toHaveBeenCalledWith(50);
     expect(result).toBe(expected);
-  ***REMOVED***);
+  });
 
-  it('delegates creation and wraps the result in a data envelope', async () => ***REMOVED***
-    const account = ***REMOVED*** id: '001', name: 'Acme', phone: '123' ***REMOVED***;
+  it('delegates creation and wraps the result in a data envelope', async () => {
+    const account = { id: '001', name: 'Acme', phone: '123' };
     salesforceService.createAccount.mockResolvedValue(account);
 
-    const result = await service.createAccount(***REMOVED***
+    const result = await service.createAccount({
       name: 'Acme',
-***REMOVED***);
+    });
 
-    expect(salesforceService.createAccount).toHaveBeenCalledWith(***REMOVED***
+    expect(salesforceService.createAccount).toHaveBeenCalledWith({
       name: 'Acme',
-***REMOVED***);
-    expect(result).toEqual(***REMOVED*** data: account ***REMOVED***);
-  ***REMOVED***);
-***REMOVED***);
+    });
+    expect(result).toEqual({ data: account });
+  });
+});

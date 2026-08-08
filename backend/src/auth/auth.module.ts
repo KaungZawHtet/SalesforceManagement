@@ -1,4 +1,4 @@
-import ***REMOVED*** Module ***REMOVED*** from '@nestjs/common';
+import { Module } from '@nestjs/common';
 
 /**
  * AuthModule is intentionally a minimal stub.
@@ -9,5 +9,5 @@ import ***REMOVED*** Module ***REMOVED*** from '@nestjs/common';
  * issuance, or route guards are implemented. Introducing user auth is
  * out of scope for the current requirements.
  */
-@Module(***REMOVED******REMOVED***)
-export class AuthModule ***REMOVED******REMOVED***
+@Module({})
+export class AuthModule {}
