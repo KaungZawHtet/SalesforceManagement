@@ -75,6 +75,7 @@ jobs:
         run: npx playwright install --with-deps chromium
 
       - name: Start backend for E2E tests
+        working-directory: .
         env:
           PORT: 3000
           CORS_ORIGIN: http://127.0.0.1:3001
