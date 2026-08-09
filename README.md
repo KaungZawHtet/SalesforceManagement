@@ -97,6 +97,7 @@ No database, JWT, Redis, or user-management libraries are used — keeping the d
 - npm
 - Docker + Docker Compose
 - GitHub CLI (`gh`) for one-command AWS deployment
+- AWS CLI with the `salesforce-manager` profile for local secret synchronization
 
 ---
 
@@ -185,7 +186,7 @@ npm run dev -- --port 3001  # http://localhost:3001
 
 ### AWS deployment
 
-The AWS deployment is executed by GitHub Actions. The local scripts only dispatch and watch the workflows; they do not need local AWS credentials:
+The AWS deployment is executed by GitHub Actions. The local deploy script uses the AWS CLI only to synchronize the server-side Salesforce values from `backend/.env`; Terraform and ECS operations still run in GitHub Actions through OIDC:
 
 ```bash
 # Deploy the pushed main branch: Terraform apply, image build/push, ECS deploy, smoke tests
@@ -195,7 +196,7 @@ The AWS deployment is executed by GitHub Actions. The local scripts only dispatc
 ./scripts/destroy.sh
 ```
 
-Before the first deployment, complete the one-time setup in `infra/README.md`: create the remote Terraform state bucket, configure the GitHub OIDC role and repository variables, and populate the Salesforce Secrets Manager values. The deploy script requires a clean local `main` branch whose commit matches `origin/main`.
+Before the first deployment, complete the one-time setup in `infra/README.md`: create the remote Terraform state bucket, configure the GitHub OIDC role and repository variables, configure the `salesforce-manager` AWS CLI profile, and create `backend/.env` from its example. When the dev infrastructure is absent, `deploy.sh` runs the Terraform bootstrap apply automatically before syncing the Salesforce values. The script requires a clean local `main` branch whose commit matches `origin/main`.
 
 The destroy command preserves the Terraform state bucket and GitHub OIDC resources. Use `./scripts/destroy.sh --yes` only for an intentional non-interactive teardown.
 

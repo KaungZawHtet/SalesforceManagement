@@ -4,7 +4,7 @@ The repository contains four GitHub Actions workflows:
 
 - `.github/workflows/ci.yml` runs backend tests/build/lint, frontend lint/build/E2E tests, and both Docker builds.
 - `.github/workflows/deploy.yml` builds immutable commit-SHA images, pushes them to ECR, updates ECS task definitions/services, waits for stability, and runs ALB smoke tests. It is also reusable by the full-stack workflow.
-- `.github/workflows/deploy-stack.yml` applies Terraform, reads the current ALB URL, calls the application deployment workflow, and refreshes the non-secret `ALB_URL` repository variable.
+- `.github/workflows/deploy-stack.yml` applies Terraform, reads the current ALB URL, and calls the application deployment workflow.
 - `.github/workflows/terraform.yml` validates and plans Terraform on infrastructure pull requests and provides manually triggered `plan`, `apply`, and `destroy` operations.
 
 ## GitHub Configuration
@@ -46,13 +46,13 @@ The backend CORS configuration must allow the same value. Salesforce credentials
 
 ## Deployment Commands
 
-After the one-time state bucket, OIDC role, repository variables, and Salesforce Secrets Manager values are configured:
+After the one-time state bucket, OIDC role, repository variables, AWS CLI profile, and local `backend/.env` are configured:
 
 ```bash
 ./scripts/deploy.sh
 ```
 
-The script requires a clean local `main` branch synchronized with `origin/main`, then dispatches `.github/workflows/deploy-stack.yml`. GitHub Actions applies Terraform, verifies the two Salesforce secret values without printing them, builds and pushes both images, deploys ECS, runs ALB smoke tests, and updates `ALB_URL`.
+The script requires a clean local `main` branch synchronized with `origin/main`. If the ECS cluster, ALB, ECR repositories, or secret containers are missing, it first dispatches the Terraform apply workflow. It then synchronizes `SF_CLIENT_ID` and `SF_CLIENT_SECRET` from `backend/.env` to AWS Secrets Manager, dispatches `.github/workflows/deploy-stack.yml`, builds and pushes both images, deploys ECS, runs ALB smoke tests, and updates `ALB_URL` locally with the authenticated GitHub CLI.
 
 The explicit teardown command is:
 
@@ -62,7 +62,7 @@ The explicit teardown command is:
 
 It asks for confirmation, dispatches the Terraform destroy workflow, and preserves the remote state bucket and external GitHub OIDC resources. Use `./scripts/destroy.sh --yes` only for intentional non-interactive teardown.
 
-The application workflow also runs on pushes to `main` and can be started manually with `workflow_dispatch`. Those direct runs still require `DEPLOY_ENABLED=true` and use the latest stored `ALB_URL`.
+The application workflow also runs on pushes to `main` and can be started manually with `workflow_dispatch`. Those direct runs still require `DEPLOY_ENABLED=true` and use the latest stored `ALB_URL`. The recommended interview flow is the explicit `./scripts/deploy.sh` command.
 
 The workflow tags images with the Git commit SHA and GitHub run ID, making deployments traceable, retry-safe with immutable ECR tags, and rollback-friendly:
 
@@ -87,4 +87,4 @@ Terraform initializes the remote backend with `TF_STATE_BUCKET`, `dev/terraform.
 
 ## Current Boundary
 
-Terraform provisions the AWS platform and baseline ECS resources. The application deployment workflow owns image builds and ECS image revisions; the full-stack workflow coordinates both responsibilities without making Terraform own the application image tags.
+Terraform provisions the AWS platform and baseline ECS resources. The application deployment workflow owns image builds and ECS image revisions; the full-stack workflow coordinates both responsibilities without making Terraform own the application image tags. The local wrapper handles only readiness detection and secret synchronization.

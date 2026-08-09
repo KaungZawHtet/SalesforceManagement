@@ -821,57 +821,28 @@ gh auth login
 gh variable set TF_STATE_BUCKET --repo <ORG>/<REPO> --body <STATE_BUCKET>
 ```
 
-4. Configure the dev backend for any local Terraform bootstrap/apply work.
+4. Create the local Salesforce environment file and verify the required variables are present:
 
 ```bash
-cd ../environments/dev
-terraform init \
-  -backend-config="bucket=<STATE_BUCKET>" \
-  -backend-config="key=dev/terraform.tfstate" \
-  -backend-config="region=us-east-1" \
-  -backend-config="encrypt=true" \
-  -backend-config="use_lockfile=true"
+cp backend/.env.example backend/.env
 ```
 
-5. Create `terraform.tfvars` from the example and configure the Salesforce My Domain:
+Set `SF_CLIENT_ID` and `SF_CLIENT_SECRET` in `backend/.env`. The deploy wrapper reads these values locally and sends them directly to AWS Secrets Manager without printing them.
 
-```bash
-cp terraform.tfvars.example terraform.tfvars
-```
+5. Push the intended code to `main`.
 
-6. Apply the initial platform with placeholder containers.
-
-```bash
-terraform plan
-terraform apply
-```
-
-7. Populate Salesforce secrets outside Terraform.
-
-8. Set:
-
-```hcl
-salesforce_secrets_ready = true
-```
-
-9. Apply the secret injection task definition.
-
-10. Configure the remaining GitHub repository variables.
-
-11. Set `DEPLOY_ENABLED=true` only if automatic push-to-`main` deployments should be enabled.
-
-12. Push the intended code to `main` and run the one-command deployment wrapper:
+6. Run the one-command deployment wrapper:
 
 ```bash
 ./scripts/deploy.sh
 ```
 
-The wrapper requires a clean local `main` branch synchronized with `origin/main`. GitHub Actions then applies Terraform with `salesforce_secrets_ready=true`, builds and pushes the immutable images, updates ECS, runs smoke tests, and refreshes `ALB_URL`. The explicit workflow bypasses `DEPLOY_ENABLED`; the variable only gates automatic/direct application workflow runs.
+The wrapper checks whether the dev infrastructure exists. If it is missing, it dispatches Terraform apply first, waits for the empty secret containers to be created, synchronizes `backend/.env`, and then dispatches the application deployment workflow.
 
-13. Verify:
+7. Verify:
 
 ```bash
-ALB_URL=$(terraform output -raw alb_url)
+ALB_URL=$(gh variable get ALB_URL --repo <ORG>/<REPO>)
 curl "$ALB_URL/"
 curl "$ALB_URL/api/health"
 curl "$ALB_URL/api/accounts"
@@ -1472,17 +1443,11 @@ The GitHub OIDC role and provider should be deleted only after confirming that n
 
 The S3 state bucket and GitHub configuration can be reused. The AWS application resources must be recreated:
 
-1. Set `salesforce_secrets_ready = false` in the ignored local `terraform.tfvars`.
-2. Run `terraform apply` to create the infrastructure and empty secret containers.
-3. Populate the two Secrets Manager values.
-4. Set `salesforce_secrets_ready = true` and apply again.
-5. Confirm the Salesforce org My Domain is configured in `salesforce_login_url`.
-6. Read the new ALB URL from Terraform outputs.
-7. Update the GitHub `ALB_URL` variable.
-8. Set `DEPLOY_ENABLED=true`.
-9. Run or trigger the deployment workflow.
+1. Confirm `backend/.env` contains `SF_CLIENT_ID` and `SF_CLIENT_SECRET`.
+2. Push the intended code to `main`.
+3. Run `./scripts/deploy.sh`.
 
-The ALB DNS name may change after recreation, so the GitHub `ALB_URL` variable must be refreshed before building the frontend image.
+The wrapper detects the missing infrastructure, applies Terraform, synchronizes the Salesforce values, deploys the application, and refreshes `ALB_URL`. The ALB DNS name may change after recreation, but the current Terraform output is passed directly to the frontend build.
 
 ## 17. Interview Talking Points
 

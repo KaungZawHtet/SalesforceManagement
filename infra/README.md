@@ -48,7 +48,7 @@ salesforce-manager-dev/sf-client-id
 salesforce-manager-dev/sf-client-secret
 ```
 
-Populate them outside Terraform:
+The one-command deploy script populates them from `backend/.env` after Terraform creates them. To populate them manually, use:
 
 ```bash
 aws secretsmanager put-secret-value \
@@ -62,7 +62,7 @@ aws secretsmanager put-secret-value \
 
 Use `--secret-string` only in a secure local shell. Never place these commands with real values in Git or CI logs.
 
-After the values exist, set this in `terraform.tfvars`:
+After the values exist, the GitHub deployment workflow applies with secret injection enabled. For manual Terraform commands, set this in `terraform.tfvars`:
 
 ```hcl
 salesforce_secrets_ready = true
@@ -83,6 +83,8 @@ The placeholder ECS containers run BusyBox HTTP servers only so that the initial
 The existing `salesforce-manager-github-actions` role must be able to run the Terraform workflow. Its permissions policy should include the project infrastructure actions described in the IAM setup, plus `iam:PassRole` limited to these ECS roles:
 
 The role also needs `secretsmanager:GetSecretValue` for the two `salesforce-manager-dev/*` secrets so the full-stack workflow can verify that values exist without printing them.
+
+The role also needs `iam:ListInstanceProfilesForRole` so Terraform can safely remove the ECS task and execution roles during destroy.
 
 ```text
 arn:aws:iam::<ACCOUNT_ID>:role/salesforce-manager-dev-ecs-execution
@@ -126,10 +128,9 @@ backend_service_name
 
 1. Apply the bootstrap state bucket once.
 2. Configure the GitHub repository variables, including `TF_STATE_BUCKET`.
-3. Apply the dev environment once with `salesforce_secrets_ready = false` to create the platform and empty secret containers.
-4. Populate both Salesforce Secrets Manager values outside Terraform.
-5. Push the intended commit to `main`.
-6. Run `./scripts/deploy.sh` to apply Terraform with secrets enabled and deploy both application images.
+3. Configure the `salesforce-manager` AWS CLI profile and create `backend/.env` from its example.
+4. Push the intended commit to `main`.
+5. Run `./scripts/deploy.sh`; it applies the missing platform, synchronizes the Salesforce secrets, and deploys both application images.
 
 ## Cleanup
 
