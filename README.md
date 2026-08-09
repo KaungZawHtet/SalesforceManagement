@@ -163,7 +163,7 @@ The full stack:
 ```bash
 # Verify backend health
 curl http://localhost:3000/api/health
-# ***REMOVED***"status":"ok"***REMOVED***
+# "status":"ok"
 ```
 
 ### Locally (backend only)
@@ -205,23 +205,23 @@ The destroy command preserves the Terraform state bucket and GitHub OIDC resourc
 ## API Contract
 
 ### `GET /api/health`
-- `200` → `***REMOVED*** "status": "ok" ***REMOVED***`
+- `200` → ` "status": "ok" `
 
 ### `GET /api/accounts?limit=50`
-- `200` → `***REMOVED*** "data": Account[], "meta": ***REMOVED*** "total", "limit", "offset" ***REMOVED*** ***REMOVED***`
+- `200` → ` "data": Account[], "meta":  "total", "limit", "offset"  `
 - `limit` is optional (default `100`, max `2000`).
 
 ### `POST /api/accounts`
-- Body: `***REMOVED*** "name": "Acme", "phone"?: "...", "website"?: "https://...", "industry"?: "..." ***REMOVED***`
-- `201` → `***REMOVED*** "data": Account ***REMOVED***`
-- `400` on validation failure → `***REMOVED*** "statusCode": 400, "message": "Bad request", "errors": [...] ***REMOVED***`
+- Body: ` "name": "Acme", "phone"?: "...", "website"?: "https://...", "industry"?: "..." `
+- `201` → ` "data": Account `
+- `400` on validation failure → ` "statusCode": 400, "message": "Bad request", "errors": [...] `
 - Unknown properties are rejected (`forbidNonWhitelisted`).
 
-`Account = ***REMOVED*** id, name, phone?, website?, industry? ***REMOVED***`, mapped from Salesforce
+`Account =  id, name, phone?, website?, industry? `, mapped from Salesforce
 `Id/Name/Phone/Website/Industry`.
 
 ### Error Shape (global filter)
-All errors return `***REMOVED*** statusCode, message, errors? ***REMOVED***`. `errors` is an array of
+All errors return ` statusCode, message, errors? `. `errors` is an array of
 messages for validation failures only.
 
 | Condition               | Status |

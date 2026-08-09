@@ -35,4 +35,4 @@ The unit tests mock native `fetch` and do not contact a live Salesforce org.
 
 All Salesforce communication and token caching are isolated in
 `src/salesforce`. Validation failures and upstream failures are returned using
-the global `***REMOVED*** statusCode, message, errors? ***REMOVED***` error shape.
+the global ` statusCode, message, errors? ` error shape.

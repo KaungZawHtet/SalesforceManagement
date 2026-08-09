@@ -284,13 +284,13 @@ Define interfaces/types for:
 Example:
 
 ```typescript
-interface Account ***REMOVED***
+interface Account 
   id: string;
   name: string;
   phone?: string;
   website?: string;
   industry?: string;
-***REMOVED***
+
 ```
 
 ---
