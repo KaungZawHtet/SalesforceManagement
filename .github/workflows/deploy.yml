@@ -1,6 +1,18 @@
 name: Deploy to AWS
 
 on:
+  workflow_call:
+    inputs:
+      alb_url:
+        description: Public ALB URL produced by Terraform.
+        required: false
+        type: string
+        default: ""
+      bypass_deploy_gate:
+        description: Allow an explicit stack deployment to ignore DEPLOY_ENABLED.
+        required: false
+        type: boolean
+        default: false
   workflow_dispatch:
   push:
     branches:
@@ -11,7 +23,7 @@ permissions:
   id-token: write
 
 concurrency:
-  group: deploy-dev
+  group: ${{ inputs.bypass_deploy_gate && 'deploy-stack-application-dev' || 'deploy-dev' }}
   cancel-in-progress: false
 
 env:
@@ -26,12 +38,12 @@ env:
   ECS_BACKEND_TASK_DEFINITION: ${{ vars.ECS_BACKEND_TASK_DEFINITION }}
   ECS_FRONTEND_CONTAINER: ${{ vars.ECS_FRONTEND_CONTAINER || 'frontend' }}
   ECS_BACKEND_CONTAINER: ${{ vars.ECS_BACKEND_CONTAINER || 'backend' }}
-  ALB_URL: ${{ vars.ALB_URL }}
+  ALB_URL: ${{ inputs.alb_url || vars.ALB_URL }}
 
 jobs:
   deploy:
     name: Build and deploy containers
-    if: ${{ vars.DEPLOY_ENABLED == 'true' }}
+    if: ${{ inputs.bypass_deploy_gate || vars.DEPLOY_ENABLED == 'true' }}
     runs-on: ubuntu-latest
     environment: dev
     steps:
@@ -168,7 +180,7 @@ jobs:
 
   deployment-disabled:
     name: Deployment not enabled
-    if: ${{ vars.DEPLOY_ENABLED != 'true' }}
+    if: ${{ !inputs.bypass_deploy_gate && vars.DEPLOY_ENABLED != 'true' }}
     runs-on: ubuntu-latest
     steps:
       - name: Explain deployment gate

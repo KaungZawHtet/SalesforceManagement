@@ -23,12 +23,18 @@ terraform validate
 terraform apply
 ```
 
-Copy the output bucket name into `infra/environments/dev/backend.tf.example`, save the result as `backend.tf`, then initialize the dev environment:
+Record the output bucket name as the GitHub repository variable `TF_STATE_BUCKET`. GitHub Actions passes that value to Terraform during backend initialization, so the workflow does not depend on the placeholder in `backend.tf.example`.
+
+For local Terraform commands, initialize the dev environment with the same backend values:
 
 ```bash
 cd ../environments/dev
-cp backend.tf.example backend.tf
-terraform init
+terraform init \
+  -backend-config="bucket=<STATE_BUCKET>" \
+  -backend-config="key=dev/terraform.tfstate" \
+  -backend-config="region=us-east-1" \
+  -backend-config="encrypt=true" \
+  -backend-config="use_lockfile=true"
 ```
 
 The state bucket has `prevent_destroy = true`. Destroying the demo environment does not delete the state bucket.
@@ -76,6 +82,8 @@ The placeholder ECS containers run BusyBox HTTP servers only so that the initial
 
 The existing `salesforce-manager-github-actions` role must be able to run the Terraform workflow. Its permissions policy should include the project infrastructure actions described in the IAM setup, plus `iam:PassRole` limited to these ECS roles:
 
+The role also needs `secretsmanager:GetSecretValue` for the two `salesforce-manager-dev/*` secrets so the full-stack workflow can verify that values exist without printing them.
+
 ```text
 arn:aws:iam::<ACCOUNT_ID>:role/salesforce-manager-dev-ecs-execution
 arn:aws:iam::<ACCOUNT_ID>:role/salesforce-manager-dev-ecs-task
@@ -96,7 +104,6 @@ The `iam:PassRole` statement should include this condition:
 ```bash
 cd infra/environments/dev
 cp terraform.tfvars.example terraform.tfvars
-# Replace ACCOUNT_ID and secret ARN placeholders.
 terraform fmt -recursive
 terraform validate
 terraform plan
@@ -117,21 +124,19 @@ backend_service_name
 
 ## Deployment Order
 
-1. Apply the bootstrap state bucket.
-2. Populate `backend.tf` and initialize the dev environment.
-3. Apply the dev environment with the placeholder images.
-4. Populate Salesforce secrets and apply again with `salesforce_secrets_ready = true`.
-5. Set the GitHub repository variables from Terraform outputs.
-6. Set `DEPLOY_ENABLED=true`.
-7. Push to `main` or manually run the deployment workflow.
+1. Apply the bootstrap state bucket once.
+2. Configure the GitHub repository variables, including `TF_STATE_BUCKET`.
+3. Apply the dev environment once with `salesforce_secrets_ready = false` to create the platform and empty secret containers.
+4. Populate both Salesforce Secrets Manager values outside Terraform.
+5. Push the intended commit to `main`.
+6. Run `./scripts/deploy.sh` to apply Terraform with secrets enabled and deploy both application images.
 
 ## Cleanup
 
 Destroy only the demo environment when the session ends:
 
 ```bash
-cd infra/environments/dev
-terraform destroy
+./scripts/destroy.sh
 ```
 
-The state bucket remains available for a future deployment. Destroying the bootstrap state bucket requires removing its `prevent_destroy` guard and emptying all object versions first.
+The script runs Terraform destroy through GitHub Actions and waits for completion. The state bucket remains available for a future deployment. Destroying the bootstrap state bucket requires removing its `prevent_destroy` guard and emptying all object versions first.

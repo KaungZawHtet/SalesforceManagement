@@ -96,6 +96,7 @@ No database, JWT, Redis, or user-management libraries are used — keeping the d
 - Node.js >= 18 (uses the native `fetch` and `Response` globals)
 - npm
 - Docker + Docker Compose
+- GitHub CLI (`gh`) for one-command AWS deployment
 
 ---
 
@@ -181,6 +182,22 @@ cp .env.example .env.local  # edit NEXT_PUBLIC_API_URL
 npm install
 npm run dev -- --port 3001  # http://localhost:3001
 ```
+
+### AWS deployment
+
+The AWS deployment is executed by GitHub Actions. The local scripts only dispatch and watch the workflows; they do not need local AWS credentials:
+
+```bash
+# Deploy the pushed main branch: Terraform apply, image build/push, ECS deploy, smoke tests
+./scripts/deploy.sh
+
+# Destroy the Terraform-managed dev environment after confirmation
+./scripts/destroy.sh
+```
+
+Before the first deployment, complete the one-time setup in `infra/README.md`: create the remote Terraform state bucket, configure the GitHub OIDC role and repository variables, and populate the Salesforce Secrets Manager values. The deploy script requires a clean local `main` branch whose commit matches `origin/main`.
+
+The destroy command preserves the Terraform state bucket and GitHub OIDC resources. Use `./scripts/destroy.sh --yes` only for an intentional non-interactive teardown.
 
 ---
 

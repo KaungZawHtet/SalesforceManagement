@@ -202,26 +202,30 @@ terraform plan
 terraform apply
 ```
 
-Then configure the dev backend:
+Then configure the dev backend and record the same bucket as the GitHub `TF_STATE_BUCKET` repository variable:
 
 ```bash
 cd ../environments/dev
-cp backend.tf.example backend.tf
+gh variable set TF_STATE_BUCKET --repo <ORG>/<REPO> --body <STATE_BUCKET>
 ```
 
-Replace the bucket placeholder in `backend.tf`, then initialize:
+Initialize with the remote backend values:
 
 ```bash
-AWS_PROFILE=salesforce-manager terraform init
+AWS_PROFILE=salesforce-manager terraform init \
+  -backend-config="bucket=<STATE_BUCKET>" \
+  -backend-config="key=dev/terraform.tfstate" \
+  -backend-config="region=us-east-1" \
+  -backend-config="encrypt=true" \
+  -backend-config="use_lockfile=true"
 ```
 
 ### State cleanup
 
-Normal demo cleanup should destroy only the dev environment:
+Normal demo cleanup should destroy only the dev environment through GitHub Actions:
 
 ```bash
-cd infra/environments/dev
-AWS_PROFILE=salesforce-manager terraform destroy
+./scripts/destroy.sh
 ```
 
 Keep the state bucket if the environment may be redeployed. Destroying the state bucket requires removing `prevent_destroy` and emptying all object versions and delete markers first.
@@ -677,7 +681,7 @@ The CI runner must be able to resolve Linux optional packages such as `lightning
 
 ## 11. GitHub Actions Application Deployment
 
-The deployment workflow runs on pushes to `main` and manual `workflow_dispatch` runs.
+The application deployment workflow runs on pushes to `main` and manual `workflow_dispatch` runs. The explicit full-stack workflow is started by `./scripts/deploy.sh` and intentionally bypasses this gate after Terraform succeeds.
 
 It is protected by:
 
@@ -685,7 +689,7 @@ It is protected by:
 DEPLOY_ENABLED=true
 ```
 
-If the variable is not exactly `true`, the workflow exits safely without assuming AWS or pushing images.
+If the variable is not exactly `true`, direct application workflow runs exit safely without assuming AWS or pushing images. The explicit full-stack workflow does not require the variable to be enabled.
 
 ### Required repository variables
 
@@ -694,6 +698,7 @@ Configure these under GitHub repository Actions variables:
 ```text
 AWS_REGION=us-east-1
 AWS_ACCOUNT_ID=<AWS_ACCOUNT_ID>
+TF_STATE_BUCKET=<TERRAFORM_STATE_BUCKET>
 
 ECR_FRONTEND_REPOSITORY=salesforce-manager-dev-frontend
 ECR_BACKEND_REPOSITORY=salesforce-manager-dev-backend
@@ -713,6 +718,8 @@ DEPLOY_ENABLED=true
 ```
 
 Do not place Salesforce credentials in these variables.
+
+`TF_STATE_BUCKET` is the encrypted, versioned bucket created by the one-time bootstrap configuration. The GitHub workflows pass it to `terraform init`; they do not copy the `REPLACE-ME` backend example.
 
 ### Frontend build-time API URL
 
@@ -779,11 +786,13 @@ Without this lifecycle rule, a later Terraform apply can revert ECS to the place
 - Manual apply.
 - Manual destroy.
 
+`.github/workflows/deploy-stack.yml` provides the single full-stack deployment path. It applies Terraform, reads the current ALB URL, calls the reusable application deployment workflow, and updates the non-secret `ALB_URL` repository variable.
+
 Pull request plans are not automatically applied. Configure the GitHub `dev` Environment with required reviewers before using `apply` or `destroy`.
 
 ### Important Terraform workflow limitation
 
-The workflow copies `terraform.tfvars.example` for CI. Non-secret deployment configuration that must be consistent across CI and local runs should therefore be represented in the example file. Secret values must not be added there.
+The workflow copies `terraform.tfvars.example` for CI and initializes the remote backend with `TF_STATE_BUCKET`. Non-secret deployment configuration that must be consistent across CI and local runs should therefore be represented in the example file. Secret values must not be added there.
 
 ## 13. Deployment Runbook
 
@@ -796,7 +805,7 @@ export AWS_PROFILE=salesforce-manager
 aws sts get-caller-identity
 ```
 
-2. Create the state bucket.
+2. Create the state bucket once.
 
 ```bash
 cd infra/bootstrap
@@ -805,40 +814,61 @@ terraform validate
 terraform apply
 ```
 
-3. Configure the dev backend.
+3. Configure the GitHub repository variables, including `TF_STATE_BUCKET`, and authenticate the GitHub CLI:
+
+```bash
+gh auth login
+gh variable set TF_STATE_BUCKET --repo <ORG>/<REPO> --body <STATE_BUCKET>
+```
+
+4. Configure the dev backend for any local Terraform bootstrap/apply work.
 
 ```bash
 cd ../environments/dev
-cp backend.tf.example backend.tf
-terraform init
+terraform init \
+  -backend-config="bucket=<STATE_BUCKET>" \
+  -backend-config="key=dev/terraform.tfstate" \
+  -backend-config="region=us-east-1" \
+  -backend-config="encrypt=true" \
+  -backend-config="use_lockfile=true"
 ```
 
-4. Create `terraform.tfvars` from the example and configure the Salesforce My Domain.
+5. Create `terraform.tfvars` from the example and configure the Salesforce My Domain:
 
-5. Apply the initial platform with placeholder containers.
+```bash
+cp terraform.tfvars.example terraform.tfvars
+```
+
+6. Apply the initial platform with placeholder containers.
 
 ```bash
 terraform plan
 terraform apply
 ```
 
-6. Populate Salesforce secrets outside Terraform.
+7. Populate Salesforce secrets outside Terraform.
 
-7. Set:
+8. Set:
 
 ```hcl
 salesforce_secrets_ready = true
 ```
 
-8. Apply the secret injection task definition.
+9. Apply the secret injection task definition.
 
-9. Configure GitHub repository variables.
+10. Configure the remaining GitHub repository variables.
 
-10. Set `DEPLOY_ENABLED=true`.
+11. Set `DEPLOY_ENABLED=true` only if automatic push-to-`main` deployments should be enabled.
 
-11. Push to `main` or manually run the deployment workflow.
+12. Push the intended code to `main` and run the one-command deployment wrapper:
 
-12. Verify:
+```bash
+./scripts/deploy.sh
+```
+
+The wrapper requires a clean local `main` branch synchronized with `origin/main`. GitHub Actions then applies Terraform with `salesforce_secrets_ready=true`, builds and pushes the immutable images, updates ECS, runs smoke tests, and refreshes `ALB_URL`. The explicit workflow bypasses `DEPLOY_ENABLED`; the variable only gates automatic/direct application workflow runs.
+
+13. Verify:
 
 ```bash
 ALB_URL=$(terraform output -raw alb_url)
@@ -1158,7 +1188,7 @@ Cost controls used by the demo:
 - Small task sizes: `256` CPU and `512` MiB memory.
 - Seven-day CloudWatch log retention.
 - ECR lifecycle cleanup.
-- Explicit `terraform destroy` after the session.
+- Explicit `./scripts/destroy.sh` after the session.
 - AWS Budget alert at a small threshold.
 
 An AWS Budget does not stop resources automatically, but it provides an early warning if a NAT gateway or other resource remains active.
@@ -1168,9 +1198,7 @@ An AWS Budget does not stop resources automatically, but it provides an early wa
 When development or the interview is complete:
 
 ```bash
-export AWS_PROFILE=salesforce-manager
-cd infra/environments/dev
-terraform destroy
+./scripts/destroy.sh
 ```
 
 Verify the main cost-producing resources are gone:
@@ -1470,7 +1498,7 @@ The key design explanations are:
 - Terraform owns infrastructure; GitHub Actions owns application image revisions.
 - Remote S3 state supports repeatable CI/CD and recovery even for a one-person project.
 - A single NAT gateway is a deliberate temporary-demo cost trade-off.
-- The environment can be removed with `terraform destroy` after the interview.
+- The environment can be removed with `./scripts/destroy.sh` after the interview.
 
 ## 18. Final Verification Checklist
 
@@ -1494,6 +1522,5 @@ Before the interview:
 - The cleanup command is ready:
 
 ```bash
-AWS_PROFILE=salesforce-manager \
-terraform -chdir=infra/environments/dev destroy
+./scripts/destroy.sh
 ```

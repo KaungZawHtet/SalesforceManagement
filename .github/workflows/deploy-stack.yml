@@ -1,0 +1,125 @@
+name: Deploy Infrastructure and Application
+
+on:
+  workflow_dispatch:
+
+permissions:
+  actions: write
+  contents: read
+  id-token: write
+
+concurrency:
+  group: deploy-dev
+  cancel-in-progress: false
+
+env:
+  TF_WORKING_DIR: infra/environments/dev
+  AWS_REGION: ${{ vars.AWS_REGION }}
+  AWS_ACCOUNT_ID: ${{ vars.AWS_ACCOUNT_ID }}
+  TF_STATE_BUCKET: ${{ vars.TF_STATE_BUCKET }}
+
+jobs:
+  terraform:
+    name: Apply infrastructure
+    runs-on: ubuntu-latest
+    environment: dev
+    outputs:
+      alb_url: ${{ steps.terraform-output.outputs.alb_url }}
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.10.0
+
+      - name: Validate deployment configuration
+        run: |
+          set -euo pipefail
+          for variable in AWS_REGION AWS_ACCOUNT_ID TF_STATE_BUCKET; do
+            if [ -z "${!variable}" ]; then
+              echo "Missing GitHub repository variable: ${variable}" >&2
+              exit 1
+            fi
+          done
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-region: ${{ env.AWS_REGION }}
+          role-to-assume: arn:aws:iam::${{ env.AWS_ACCOUNT_ID }}:role/salesforce-manager-github-actions
+          role-session-name: deploy-stack-terraform-${{ github.run_id }}
+
+      - name: Configure Terraform files
+        working-directory: ${{ env.TF_WORKING_DIR }}
+        run: cp terraform.tfvars.example terraform.tfvars
+
+      - name: Initialize Terraform
+        working-directory: ${{ env.TF_WORKING_DIR }}
+        run: |
+          terraform init \
+            -input=false \
+            -reconfigure \
+            -backend-config="bucket=${TF_STATE_BUCKET}" \
+            -backend-config="key=dev/terraform.tfstate" \
+            -backend-config="region=${AWS_REGION}" \
+            -backend-config="encrypt=true" \
+            -backend-config="use_lockfile=true"
+
+      - name: Verify Salesforce secrets
+        run: |
+          set -euo pipefail
+          for secret_id in \
+            salesforce-manager-dev/sf-client-id \
+            salesforce-manager-dev/sf-client-secret; do
+            secret_value=$(aws secretsmanager get-secret-value \
+              --secret-id "$secret_id" \
+              --query SecretString \
+              --output text)
+            if [ -z "$secret_value" ] || [ "$secret_value" = "None" ]; then
+              echo "Secret has no value: $secret_id" >&2
+              exit 1
+            fi
+            unset secret_value
+          done
+
+      - name: Apply infrastructure
+        working-directory: ${{ env.TF_WORKING_DIR }}
+        run: terraform apply -input=false -auto-approve -var='salesforce_secrets_ready=true'
+
+      - name: Read Terraform outputs
+        id: terraform-output
+        working-directory: ${{ env.TF_WORKING_DIR }}
+        run: echo "alb_url=$(terraform output -raw alb_url)" >> "$GITHUB_OUTPUT"
+
+  application:
+    name: Build and deploy application
+    needs: terraform
+    uses: ./.github/workflows/deploy.yml
+    with:
+      alb_url: ${{ needs.terraform.outputs.alb_url }}
+      bypass_deploy_gate: true
+    secrets: inherit
+
+  publish-alb-url:
+    name: Publish ALB URL
+    needs:
+      - terraform
+      - application
+    if: ${{ needs.application.result == 'success' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Update repository variable
+        env:
+          ALB_URL: ${{ needs.terraform.outputs.alb_url }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          variable_path="repos/${GITHUB_REPOSITORY}/actions/variables/ALB_URL"
+          if ! gh api --method PATCH "$variable_path" -f "value=${ALB_URL}" >/dev/null 2>&1; then
+            gh api --method POST "repos/${GITHUB_REPOSITORY}/actions/variables" \
+              -f name=ALB_URL \
+              -f "value=${ALB_URL}" \
+              >/dev/null
+          fi
